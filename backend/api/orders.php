@@ -16,6 +16,9 @@ if ($method === 'GET') {
     // GET /api/orders.php            -> list orders (admin/POS), newest first
     // GET /api/orders.php?id=12      -> one order with its items
     // GET /api/orders.php?status=pending
+    // Order data includes customer names/phones/addresses — admin only.
+    require_admin();
+
     if (isset($_GET['id'])) {
         $stmt = $pdo->prepare('SELECT o.*, c.full_name, c.phone, c.email, c.address, c.postal_code, c.city
                                 FROM orders o LEFT JOIN customers c ON c.id = o.customer_id
@@ -167,6 +170,7 @@ if ($method === 'POST') {
 }
 
 if ($method === 'PUT') {
+    require_admin();
     // Update order status (admin/POS) — { "id": 12, "status": "confirmed" }
     $data = json_input();
     if (empty($data['id'])) fail('Missing field: id');

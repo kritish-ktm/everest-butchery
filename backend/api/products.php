@@ -30,7 +30,9 @@ if ($method === 'GET') {
         $sql .= ' AND p.category_id = ?';
         $params[] = $_GET['category'];
     }
-    if (!isset($_GET['include_out_of_stock'])) {
+    if (isset($_GET['include_out_of_stock'])) {
+        require_admin(); // out-of-stock items are only relevant to shop management
+    } else {
         $sql .= ' AND p.in_stock = 1';
     }
     $sql .= ' ORDER BY c.sort_order, p.is_featured DESC, p.name_en';
@@ -41,6 +43,7 @@ if ($method === 'GET') {
 }
 
 if ($method === 'POST') {
+    require_admin();
     // Create a product (admin use)
     $data = json_input();
     foreach (['category_id', 'name_en', 'unit', 'price_per_unit'] as $field) {
@@ -67,6 +70,7 @@ if ($method === 'POST') {
 }
 
 if ($method === 'PUT') {
+    require_admin();
     // Update a product (admin use)
     parse_str(file_get_contents('php://input'), $_PUT); // not used; we expect JSON with id
     $data = json_input();
@@ -91,6 +95,7 @@ if ($method === 'PUT') {
 }
 
 if ($method === 'DELETE') {
+    require_admin();
     $id = $_GET['id'] ?? null;
     if (!$id) fail('Missing id');
     $pdo = db();
