@@ -17,18 +17,16 @@ export default function Home() {
         <div className="container hero-grid">
           <Reveal>
             <h2 style={{ fontSize: 40, marginBottom: 16, color: "var(--white)" }}>
-              Fresh Halal Meat,<br />Cut Daily
+              Fresh Meat,<br />Cut Daily
             </h2>
             <p>
-              Goat, buffalo, chicken and Nepali pantry staples — halal certified, prepared the way
+              Goat, buffalo, chicken and Nepali pantry staples — prepared the way
               your kitchen at home expects. Order online for pickup or delivery.
             </p>
             <div className="hero-actions">
               <Link to="/menu" className="btn btn-primary">Shop the Menu</Link>
-              <Link to="/halal" className="btn btn-outline">Our Halal Standard</Link>
             </div>
             <div className="hero-badges">
-              
               <span className="badge"><Icon name="fresh" size={13} /> In-house Fresh Cuts</span>
               <span className="badge"><Icon name="truck" size={13} /> Pickup & delivery</span>
             </div>
@@ -43,7 +41,6 @@ export default function Home() {
 
       <div className="trust-strip">
         <div className="container">
-          <div className="trust-item"><Icon name="halal" size={20} className="gold" /> Halal certified sourcing</div>
           <div className="trust-item"><Icon name="fresh" size={20} className="gold" /> Trusted by the Nepali community in Denmark</div>
           <div className="trust-item"><Icon name="clock" size={20} className="gold" /> Same-day pickup available</div>
         </div>

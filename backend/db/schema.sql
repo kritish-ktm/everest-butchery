@@ -32,6 +32,7 @@ CREATE TABLE products (
   image_url       VARCHAR(255) DEFAULT NULL,
   is_halal        TINYINT(1) NOT NULL DEFAULT 1,
   in_stock        TINYINT(1) NOT NULL DEFAULT 1,
+  is_visible      TINYINT(1) NOT NULL DEFAULT 1,  -- hide from customer menu without deleting
   is_featured     TINYINT(1) NOT NULL DEFAULT 0,
   created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

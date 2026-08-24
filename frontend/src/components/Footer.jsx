@@ -7,14 +7,13 @@ export default function Footer() {
         <div>
           <h4>Everest Butchery</h4>
           <p style={{ fontSize: 14, maxWidth: 320 }}>
-            Halal goat, buffalo, chicken and Nepali pantry staples, cut fresh daily. Serving the Nepali community in Denmark.
+            Goat, buffalo, chicken and Nepali pantry staples, cut fresh daily. Serving the Nepali community in Denmark.
           </p>
         </div>
         <div>
           <h4>Shop</h4>
           <Link to="/menu">Menu</Link>
           <Link to="/cart">Cart</Link>
-          <Link to="/halal">Halal & Quality</Link>
         </div>
         <div>
           <h4>Visit</h4>
@@ -25,7 +24,6 @@ export default function Footer() {
       </div>
       <div className="container footer-bottom">
         <span>© {new Date().getFullYear()} Everest Butchery. All rights reserved. Made by kriTish.</span>
-        <span>Halal certified · Denmark</span>
       </div>
     </footer>
   );

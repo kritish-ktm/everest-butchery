@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useCart } from "../context/CartContext";
 import Icon from "./Icon";
 import { categoryIcon } from "../lib/categoryIcon";
+import { productImageUrl } from "../lib/imageUrl";
 
 export default function ProductCard({ product }) {
   const { addItem } = useCart();
@@ -16,11 +17,16 @@ export default function ProductCard({ product }) {
   }
 
   const icon = categoryIcon(product.category_name_en || "");
+  const imageUrl = productImageUrl(product.image_url);
 
   return (
     <div className="card product-card">
       <div className="product-media">
-        <Icon name={icon} size={56} />
+        {imageUrl ? (
+          <img src={imageUrl} alt={product.name_en} className="product-photo" />
+        ) : (
+          <Icon name={icon} size={56} />
+        )}
       </div>
       <div className="product-body">
         <div className="product-name">
@@ -44,7 +50,7 @@ export default function ProductCard({ product }) {
           <button className="btn btn-primary" style={{ flex: 1, padding: "12px 12px" }} onClick={handleAdd}>
             {added ? (
               <>
-                <Icon name="halal" size={16} /> Added
+                <Icon name="check" size={16} /> Added
               </>
             ) : (
               "Add to Cart"

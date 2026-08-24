@@ -3,10 +3,23 @@ require_once __DIR__ . '/config.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
+// Deletes an uploaded product image file from disk, but only if it lives
+// inside our own uploads/products/ folder — never touches anything else.
+function delete_uploaded_image(?string $imageUrl): void {
+    if (!$imageUrl || strpos($imageUrl, 'uploads/products/') !== 0) return;
+    $path = __DIR__ . '/../' . $imageUrl;
+    $real = realpath($path);
+    $uploadsRoot = realpath(__DIR__ . '/../uploads/products');
+    if ($real && $uploadsRoot && strpos($real, $uploadsRoot) === 0 && is_file($real)) {
+        @unlink($real);
+    }
+}
+
 if ($method === 'GET') {
-    // GET /api/products.php            -> all in-stock products, grouped-friendly (flat list + category info)
+    // GET /api/products.php            -> all visible, in-stock products (public menu)
     // GET /api/products.php?id=5       -> single product
     // GET /api/products.php?category=1 -> products in one category
+    // GET /api/products.php?include_out_of_stock=1 -> admin view: everything, incl. hidden/out-of-stock
     $pdo = db();
 
     if (isset($_GET['id'])) {
@@ -31,9 +44,9 @@ if ($method === 'GET') {
         $params[] = $_GET['category'];
     }
     if (isset($_GET['include_out_of_stock'])) {
-        require_admin(); // out-of-stock items are only relevant to shop management
+        require_admin(); // hidden / out-of-stock items are only relevant to shop management
     } else {
-        $sql .= ' AND p.in_stock = 1';
+        $sql .= ' AND p.in_stock = 1 AND p.is_visible = 1';
     }
     $sql .= ' ORDER BY c.sort_order, p.is_featured DESC, p.name_en';
 
@@ -51,8 +64,8 @@ if ($method === 'POST') {
     }
     $pdo = db();
     $stmt = $pdo->prepare(
-        'INSERT INTO products (category_id, name_en, name_np, description, unit, price_per_unit, image_url, is_halal, in_stock, is_featured)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO products (category_id, name_en, name_np, description, unit, price_per_unit, image_url, is_halal, in_stock, is_visible, is_featured)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $stmt->execute([
         $data['category_id'],
@@ -64,6 +77,7 @@ if ($method === 'POST') {
         $data['image_url'] ?? null,
         $data['is_halal'] ?? 1,
         $data['in_stock'] ?? 1,
+        $data['is_visible'] ?? 1,
         $data['is_featured'] ?? 0,
     ]);
     send(['id' => (int)$pdo->lastInsertId()], 201);
@@ -72,11 +86,21 @@ if ($method === 'POST') {
 if ($method === 'PUT') {
     require_admin();
     // Update a product (admin use)
-    parse_str(file_get_contents('php://input'), $_PUT); // not used; we expect JSON with id
     $data = json_input();
     if (empty($data['id'])) fail('Missing field: id');
 
-    $fields = ['category_id', 'name_en', 'name_np', 'description', 'unit', 'price_per_unit', 'image_url', 'is_halal', 'in_stock', 'is_featured'];
+    $pdo = db();
+
+    // If the image is being changed/cleared, clean up the old file afterward.
+    $oldImage = null;
+    if (array_key_exists('image_url', $data)) {
+        $existing = $pdo->prepare('SELECT image_url FROM products WHERE id = ?');
+        $existing->execute([$data['id']]);
+        $row = $existing->fetch();
+        $oldImage = $row['image_url'] ?? null;
+    }
+
+    $fields = ['category_id', 'name_en', 'name_np', 'description', 'unit', 'price_per_unit', 'image_url', 'is_halal', 'in_stock', 'is_visible', 'is_featured'];
     $set = [];
     $params = [];
     foreach ($fields as $f) {
@@ -88,9 +112,13 @@ if ($method === 'PUT') {
     if (!$set) fail('No fields to update');
     $params[] = $data['id'];
 
-    $pdo = db();
     $stmt = $pdo->prepare('UPDATE products SET ' . implode(', ', $set) . ' WHERE id = ?');
     $stmt->execute($params);
+
+    if ($oldImage && $oldImage !== ($data['image_url'] ?? null)) {
+        delete_uploaded_image($oldImage);
+    }
+
     send(['updated' => true]);
 }
 
@@ -99,8 +127,16 @@ if ($method === 'DELETE') {
     $id = $_GET['id'] ?? null;
     if (!$id) fail('Missing id');
     $pdo = db();
+
+    $existing = $pdo->prepare('SELECT image_url FROM products WHERE id = ?');
+    $existing->execute([$id]);
+    $row = $existing->fetch();
+
     $stmt = $pdo->prepare('DELETE FROM products WHERE id = ?');
     $stmt->execute([$id]);
+
+    if ($row) delete_uploaded_image($row['image_url']);
+
     send(['deleted' => true]);
 }
 

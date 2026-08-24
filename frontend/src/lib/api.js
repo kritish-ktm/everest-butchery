@@ -50,6 +50,21 @@ export const api = {
   deleteProduct: (id) =>
     request(`products.php?id=${id}`, { method: "DELETE" }, { auth: true }),
 
+  // --- Admin: product image upload ---
+  uploadProductImage: async (file) => {
+    const token = adminAuth.getToken();
+    const formData = new FormData();
+    formData.append("image", file);
+    const res = await fetch(`${API_URL}/upload.php`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData, // no Content-Type header — the browser sets the multipart boundary itself
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Upload failed (${res.status})`);
+    return data; // { path: "uploads/products/xxxx.jpg" }
+  },
+
   // --- Admin: orders ---
   adminGetOrders: (params = {}) => {
     const qs = new URLSearchParams(params).toString();

@@ -14,7 +14,7 @@ export default function Menu() {
       <div className="section-head">
         <div>
           <h2>Our Menu</h2>
-          <p>Priced per kg unless noted. All meat is halal.</p>
+          <p>Priced per kg unless noted.</p>
         </div>
       </div>
 

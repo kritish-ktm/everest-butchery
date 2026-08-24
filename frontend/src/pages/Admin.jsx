@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { adminAuth } from "../lib/adminAuth";
+import { productImageUrl } from "../lib/imageUrl";
+import { categoryIcon } from "../lib/categoryIcon";
+import Icon from "../components/Icon";
 
 const emptyProduct = {
   id: null,
@@ -11,7 +14,9 @@ const emptyProduct = {
   description: "",
   unit: "kg",
   price_per_unit: "",
+  image_url: "",
   in_stock: 1,
+  is_visible: 1,
   is_featured: 0,
 };
 
@@ -30,6 +35,7 @@ export default function Admin() {
 
   const [form, setForm] = useState(emptyProduct);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     loadAll();
@@ -97,7 +103,7 @@ export default function Admin() {
   }
 
   async function handleDelete(id) {
-    if (!confirm("Delete this product? This can't be undone.")) return;
+    if (!confirm("Delete this product? This can't be undone, and its photo will be removed too.")) return;
     try {
       await api.deleteProduct(id);
       await loadAll();
@@ -115,6 +121,35 @@ export default function Admin() {
     }
   }
 
+  async function toggleVisible(product) {
+    try {
+      await api.updateProduct({ id: product.id, is_visible: product.is_visible ? 0 : 1 });
+      await loadAll();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleImageChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    try {
+      const res = await api.uploadProductImage(file);
+      setForm((f) => ({ ...f, image_url: res.path }));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
+      e.target.value = ""; // allow re-selecting the same file later
+    }
+  }
+
+  function removeImage() {
+    setForm((f) => ({ ...f, image_url: "" }));
+  }
+
   async function handleStatusChange(order, status) {
     try {
       await api.updateOrderStatus({ id: order.id, status });
@@ -123,6 +158,8 @@ export default function Admin() {
       setError(err.message);
     }
   }
+
+  const previewUrl = productImageUrl(form.image_url);
 
   return (
     <div className="section container">
@@ -151,6 +188,26 @@ export default function Admin() {
         <div>
           <form className="form-card" onSubmit={handleSaveProduct} style={{ marginBottom: 30 }}>
             <h3 style={{ fontSize: 16, marginBottom: 16 }}>{form.id ? "Edit Product" : "Add Product"}</h3>
+
+            <div className="image-uploader">
+              <div className="image-preview">
+                {previewUrl ? <img src={previewUrl} alt="" /> : <Icon name="meat" size={28} />}
+              </div>
+              <div className="image-uploader-actions">
+                <label className="file-input-label">
+                  <Icon name="check" size={14} />
+                  {uploading ? "Uploading…" : previewUrl ? "Replace photo" : "Upload photo"}
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageChange} disabled={uploading} />
+                </label>
+                {previewUrl && (
+                  <button type="button" className="remove-btn" onClick={removeImage} style={{ textAlign: "left" }}>
+                    Remove photo
+                  </button>
+                )}
+                <span style={{ fontSize: 12, color: "#999" }}>JPG, PNG, WEBP or GIF, up to 5MB</span>
+              </div>
+            </div>
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div className="field">
                 <label>Category</label>
@@ -201,13 +258,23 @@ export default function Admin() {
                   <option value="1">Yes</option>
                 </select>
               </div>
+              <div className="field">
+                <label>Visible on menu</label>
+                <select
+                  value={form.is_visible === 0 ? "0" : "1"}
+                  onChange={(e) => setForm({ ...form, is_visible: Number(e.target.value) })}
+                >
+                  <option value="1">Visible</option>
+                  <option value="0">Hidden</option>
+                </select>
+              </div>
             </div>
             <div className="field">
               <label>Description</label>
               <textarea rows={2} value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </div>
             <div style={{ display: "flex", gap: 10 }}>
-              <button className="btn btn-primary" disabled={saving}>
+              <button className="btn btn-primary" disabled={saving || uploading}>
                 {saving ? "Saving…" : form.id ? "Update Product" : "Add Product"}
               </button>
               {form.id && (
@@ -218,25 +285,36 @@ export default function Admin() {
 
           <table className="cart-table">
             <thead>
-              <tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th></th></tr>
+              <tr><th></th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Menu</th><th></th></tr>
             </thead>
             <tbody>
-              {products.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.name_en}</td>
-                  <td>{p.category_name_en}</td>
-                  <td>{parseFloat(p.price_per_unit).toFixed(0)} kr / {p.unit}</td>
-                  <td>
-                    <button className="pill" onClick={() => toggleStock(p)}>
-                      {Number(p.in_stock) ? "In stock" : "Out of stock"}
-                    </button>
-                  </td>
-                  <td style={{ display: "flex", gap: 8 }}>
-                    <button className="remove-btn" onClick={() => startEdit(p)}>Edit</button>
-                    <button className="remove-btn" onClick={() => handleDelete(p.id)}>Delete</button>
-                  </td>
-                </tr>
-              ))}
+              {products.map((p) => {
+                const thumb = productImageUrl(p.image_url);
+                return (
+                  <tr key={p.id}>
+                    <td>
+                      {thumb ? <img src={thumb} alt="" className="thumb" /> : <Icon name={categoryIcon(p.category_name_en)} size={22} />}
+                    </td>
+                    <td>{p.name_en}</td>
+                    <td>{p.category_name_en}</td>
+                    <td>{parseFloat(p.price_per_unit).toFixed(0)} kr / {p.unit}</td>
+                    <td>
+                      <button className="pill" onClick={() => toggleStock(p)}>
+                        {Number(p.in_stock) ? "In stock" : "Out of stock"}
+                      </button>
+                    </td>
+                    <td>
+                      <button className="pill" onClick={() => toggleVisible(p)}>
+                        {Number(p.is_visible) ? "Visible" : "Hidden"}
+                      </button>
+                    </td>
+                    <td style={{ display: "flex", gap: 8 }}>
+                      <button className="remove-btn" onClick={() => startEdit(p)}>Edit</button>
+                      <button className="remove-btn" onClick={() => handleDelete(p.id)}>Delete</button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

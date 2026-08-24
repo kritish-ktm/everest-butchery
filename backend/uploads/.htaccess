@@ -1,0 +1,6 @@
+# Uploaded files are images only, but this is defense-in-depth: even if a
+# malicious file somehow got past the upload validation, Apache will never
+# execute it as PHP from inside this folder.
+<FilesMatch "\.(php|php[0-9]?|phtml|pht)$">
+    Require all denied
+</FilesMatch>

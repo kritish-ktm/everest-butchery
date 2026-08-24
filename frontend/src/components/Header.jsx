@@ -4,7 +4,6 @@ import { useCart } from "../context/CartContext";
 
 const links = [
   { to: "/menu", label: "Menu" },
-  { to: "/halal", label: "Halal" },
   { to: "/about", label: "About" },
   { to: "/contact", label: "Contact" },
 ];
