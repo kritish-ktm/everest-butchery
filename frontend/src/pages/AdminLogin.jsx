@@ -26,7 +26,7 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="section container" style={{ maxWidth: 400 }}>
+    <div className="section container page-shell narrow-page auth-page">
       <div className="form-card">
         <h2 style={{ fontSize: 22, marginBottom: 6 }}>Admin Login</h2>
         <p style={{ color: "#888", fontSize: 14, marginBottom: 22 }}>

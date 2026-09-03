@@ -16,7 +16,7 @@ export default function Checkout() {
 
   if (items.length === 0) {
     return (
-      <div className="section container empty-state">
+      <div className="section container empty-state page-shell">
         <p style={{ marginBottom: 20 }}>Your cart is empty.</p>
         <Link to="/menu" className="btn btn-primary">Browse Menu</Link>
       </div>
@@ -61,8 +61,11 @@ export default function Checkout() {
   }
 
   return (
-    <div className="section container">
-      <h2 style={{ marginBottom: 20 }}>Checkout</h2>
+    <div className="section container page-shell">
+      <div className="page-heading compact-heading">
+        <span className="page-kicker">PICKUP OR DELIVERY</span>
+        <h2>Checkout</h2>
+      </div>
       <div className="checkout-grid">
         <form className="form-card" onSubmit={handleSubmit}>
           {error && <div className="error-box">{error}</div>}

@@ -4,26 +4,32 @@ export default function Footer() {
   return (
     <footer className="site-footer">
       <div className="container footer-grid">
-        <div>
-          <h4>Everest Butchery</h4>
-          <p style={{ fontSize: 14, maxWidth: 320 }}>
-            Goat, buffalo, chicken and Nepali pantry staples, cut fresh daily. Serving the Nepali community in Denmark.
+        <div className="footer-brand">
+          <Link to="/" className="footer-logo">Everest <span>Butchery</span></Link>
+          <p>
+            Fresh cuts, familiar flavours, and Nepali pantry essentials for homes across Denmark.
           </p>
+          <div className="footer-certification">
+            <i className="bi bi-shield-check" aria-hidden="true" />
+            Halal certified
+          </div>
         </div>
-        <div>
+        <div className="footer-column">
           <h4>Shop</h4>
           <Link to="/menu">Menu</Link>
+          <Link to="/dashain-offers">Dashain Offers</Link>
           <Link to="/cart">Cart</Link>
         </div>
-        <div>
+        <div className="footer-column">
           <h4>Visit</h4>
-          <a href="tel:+4538280241">+45 38 28 02 41</a>
+          <a href="tel:+4571338350"><i className="bi bi-telephone" aria-hidden="true" /> +45 71 33 83 50</a>
           <a href="mailto:hello@everestbutchery.dk">hello@everestbutchery.dk</a>
           <Link to="/contact">Store addresses & hours</Link>
         </div>
       </div>
       <div className="container footer-bottom">
-        <span>© {new Date().getFullYear()} Everest Butchery. All rights reserved. Made by kriTish.</span>
+        <span>© {new Date().getFullYear()} Everest Butchery. All rights reserved.</span>
+        <span>Freshly prepared in Denmark.</span>
       </div>
     </footer>
   );

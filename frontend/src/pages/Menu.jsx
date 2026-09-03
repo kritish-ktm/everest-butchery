@@ -10,9 +10,10 @@ export default function Menu() {
   const filtered = activeCat === "all" ? products : products.filter((p) => p.category_id === activeCat);
 
   return (
-    <div className="section container">
-      <div className="section-head">
+    <div className="section container page-shell">
+      <div className="section-head page-heading">
         <div>
+          <span className="page-kicker">EVERYDAY FRESH</span>
           <h2>Our Menu</h2>
           <p>Priced per kg unless noted.</p>
         </div>

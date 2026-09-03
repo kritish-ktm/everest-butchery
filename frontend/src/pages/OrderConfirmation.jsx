@@ -7,7 +7,7 @@ export default function OrderConfirmation() {
   const { order } = state;
 
   return (
-    <div className="section container confirm-box">
+    <div className="section container confirm-box page-shell">
       <div className="confirm-icon"><Icon name="check" size={34} /></div>
       <h2>Order Placed!</h2>
       <div className="order-number">{order.order_number}</div>

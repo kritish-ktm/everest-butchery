@@ -7,7 +7,7 @@ export default function Cart() {
 
   if (items.length === 0) {
     return (
-      <div className="section container empty-state">
+      <div className="section container empty-state page-shell">
         <h2 style={{ marginBottom: 10 }}>Your Cart is Empty</h2>
         <p style={{ marginBottom: 20 }}>Add something fresh from the menu.</p>
         <Link to="/menu" className="btn btn-primary">Browse Menu</Link>
@@ -16,9 +16,12 @@ export default function Cart() {
   }
 
   return (
-    <div className="section container">
-      <h2 style={{ marginBottom: 20 }}>Your Cart</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 30, alignItems: "start" }}>
+    <div className="section container page-shell">
+      <div className="page-heading compact-heading">
+        <span className="page-kicker">READY WHEN YOU ARE</span>
+        <h2>Your Cart</h2>
+      </div>
+      <div className="cart-layout">
         <table className="cart-table">
           <thead>
             <tr><th>Item</th><th>Qty</th><th>Price</th><th></th></tr>
