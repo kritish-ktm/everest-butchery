@@ -78,7 +78,16 @@ if ($method === 'POST') {
     $data = json_input();
 
     if (empty($data['items']) || !is_array($data['items'])) fail('Order must include at least one item');
-    if (empty($data['customer']['full_name']) || empty($data['customer']['phone'])) {
+
+    $customer = is_array($data['customer'] ?? null) ? $data['customer'] : [];
+    if (!empty($data['google_credential'])) {
+        $googleIdentity = google_identity_from_token((string)$data['google_credential']);
+        if (!$googleIdentity) fail('Google identity could not be validated', 401);
+        if (!empty($googleIdentity['name'])) $customer['full_name'] = $googleIdentity['name'];
+        $customer['email'] = $googleIdentity['email'];
+    }
+
+    if (empty($customer['full_name']) || empty($customer['phone'])) {
         fail('Customer name and phone are required');
     }
 
@@ -97,12 +106,12 @@ if ($method === 'POST') {
                 'INSERT INTO customers (full_name, phone, email, address, postal_code, city) VALUES (?, ?, ?, ?, ?, ?)'
             );
             $insertCust->execute([
-                $data['customer']['full_name'],
-                $data['customer']['phone'],
-                $data['customer']['email'] ?? null,
-                $data['customer']['address'] ?? null,
-                $data['customer']['postal_code'] ?? null,
-                $data['customer']['city'] ?? null,
+                $customer['full_name'],
+                $customer['phone'],
+                $customer['email'] ?? null,
+                $customer['address'] ?? null,
+                $customer['postal_code'] ?? null,
+                $customer['city'] ?? null,
             ]);
             $customerId = $pdo->lastInsertId();
         }

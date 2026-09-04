@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { api } from "../lib/api";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 
 const DELIVERY_FEE = 39;
 
@@ -17,6 +18,8 @@ export default function Checkout() {
   const [form, setForm] = useState({ full_name: "", phone: "", email: "", address: "", postal_code: "", city: "", notes: "" });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [googleUser, setGoogleUser] = useState(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   if (items.length === 0) {
     return (
@@ -31,6 +34,24 @@ export default function Checkout() {
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  async function handleGoogleCredential(credential) {
+    setError("");
+    setGoogleLoading(true);
+    try {
+      const result = await api.googleLogin(credential);
+      setGoogleUser({ ...result.user, credential });
+      setForm((current) => ({
+        ...current,
+        full_name: result.user.name || current.full_name,
+        email: result.user.email || current.email,
+      }));
+    } catch (err) {
+      setError(err.message || "Google identity could not be validated.");
+    } finally {
+      setGoogleLoading(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -50,6 +71,7 @@ export default function Checkout() {
       const res = await api.createOrder({
         source: "online",
         campaign: campaign || undefined,
+        google_credential: googleUser?.credential || undefined,
         fulfillment,
         payment_method: paymentMethod,
         customer: form,
@@ -77,6 +99,21 @@ export default function Checkout() {
       </div>
       <div className="checkout-grid">
         <form className="form-card" onSubmit={handleSubmit}>
+          <div className="google-signin-card">
+            <div className="google-signin-copy">
+              <strong>{googleUser ? "Google verified" : "Optional: continue with Google"}</strong>
+              <span>{googleUser
+                ? `${googleUser.email} is verified for this order.`
+                : "Use Google to validate your name and email, or continue as a guest."}</span>
+            </div>
+            {googleLoading ? (
+              <span className="google-signin-loading"><i className="bi bi-arrow-repeat" aria-hidden="true" /> Checking…</span>
+            ) : googleUser ? (
+              <button type="button" className="text-btn" onClick={() => setGoogleUser(null)}>Use guest checkout</button>
+            ) : (
+              <GoogleSignInButton onCredential={handleGoogleCredential} />
+            )}
+          </div>
           <div className="checkout-mode">
             <i className={`bi ${campaign === "dashain" ? "bi-stars" : "bi-person-check"}`} aria-hidden="true" />
             <div>

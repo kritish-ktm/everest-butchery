@@ -9,6 +9,9 @@ define('DB_HOST', 'localhost');
 define('DB_NAME', 'everest_butchery');
 define('DB_USER', 'root');
 define('DB_PASS', '');
+// Set GOOGLE_CLIENT_ID in the Apache/PHP environment to enable optional
+// Google Sign-In validation. Never put a client secret in this file.
+define('GOOGLE_CLIENT_ID', getenv('GOOGLE_CLIENT_ID') ?: '');
 
 // Allow the Vite dev server (default port 5173) to call this API during development.
 // In production, set this to your real site origin instead of "*".
@@ -55,6 +58,40 @@ function send(array $data, int $code = 200): void {
 
 function fail(string $message, int $code = 400): void {
     send(['error' => $message], $code);
+}
+
+/**
+ * Validate a Google Identity Services ID token server-side.
+ * Google tokeninfo verifies the token signature and expiry; we additionally
+ * enforce this application's client ID and verified email claim.
+ */
+function google_identity_from_token(string $credential): ?array {
+    if (!$credential || !GOOGLE_CLIENT_ID) return null;
+
+    $url = 'https://oauth2.googleapis.com/tokeninfo?id_token=' . rawurlencode($credential);
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'GET',
+            'timeout' => 8,
+            'ignore_errors' => true,
+        ],
+    ]);
+    $raw = @file_get_contents($url, false, $context);
+    if ($raw === false) return null;
+
+    $payload = json_decode($raw, true);
+    if (!is_array($payload)) return null;
+    if (($payload['aud'] ?? '') !== GOOGLE_CLIENT_ID) return null;
+    if (!in_array($payload['iss'] ?? '', ['accounts.google.com', 'https://accounts.google.com'], true)) return null;
+    if (empty($payload['email']) || !in_array($payload['email_verified'] ?? false, [true, 'true', '1', 1], true)) return null;
+    if (empty($payload['exp']) || (int)$payload['exp'] <= time()) return null;
+
+    return [
+        'sub' => (string)($payload['sub'] ?? ''),
+        'name' => trim((string)($payload['name'] ?? '')),
+        'email' => strtolower(trim((string)$payload['email'])),
+        'picture' => (string)($payload['picture'] ?? ''),
+    ];
 }
 
 /**

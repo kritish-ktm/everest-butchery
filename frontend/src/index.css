@@ -2117,6 +2117,73 @@ h4 {
   color: var(--red-dark);
 }
 
+.google-signin-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #faf9f7;
+}
+
+.google-signin-copy strong,
+.google-signin-copy span {
+  display: block;
+}
+
+.google-signin-copy strong {
+  font-size: 13px;
+}
+
+.google-signin-copy span,
+.google-signin-note {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.google-signin-note {
+  max-width: 280px;
+  margin-bottom: 0;
+}
+
+.google-signin-note code {
+  color: var(--red-dark);
+  font-size: 10px;
+}
+
+.google-signin-button {
+  min-width: 280px;
+  min-height: 40px;
+}
+
+.google-signin-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.google-signin-loading .bi {
+  animation: spin 1s linear infinite;
+}
+
+.text-btn {
+  border: 0;
+  background: transparent;
+  color: var(--red-dark);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .checkout-mode > .bi {
   margin-top: 2px;
   font-size: 20px;
@@ -2387,6 +2454,14 @@ h4 {
 
   .dashboard-custom-range .btn {
     width: 100%;
+  }
+
+  .google-signin-card {
+    display: block;
+  }
+
+  .google-signin-button {
+    margin-top: 12px;
   }
 }
 

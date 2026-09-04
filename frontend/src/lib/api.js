@@ -35,6 +35,8 @@ export const api = {
   getProduct: (id) => request(`products.php?id=${id}`),
   createOrder: (payload) =>
     request("orders.php", { method: "POST", body: JSON.stringify(payload) }),
+  googleLogin: (credential) =>
+    request("google_login.php", { method: "POST", body: JSON.stringify({ credential }) }),
 
   // --- Admin auth ---
   adminLogin: (email, password) =>
