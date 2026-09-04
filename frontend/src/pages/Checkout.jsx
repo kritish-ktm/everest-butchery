@@ -6,6 +6,15 @@ import GoogleSignInButton from "../components/GoogleSignInButton";
 
 const DELIVERY_FEE = 39;
 
+function savedBooking() {
+  try {
+    const value = sessionStorage.getItem("everest-dashain-booking");
+    return value ? JSON.parse(value) : {};
+  } catch {
+    return {};
+  }
+}
+
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart();
   const navigate = useNavigate();
@@ -13,9 +22,19 @@ export default function Checkout() {
   const campaign = new URLSearchParams(search).get("campaign")
     || sessionStorage.getItem("everest-order-campaign")
     || "";
-  const [fulfillment, setFulfillment] = useState("pickup");
+  const [fulfillment, setFulfillment] = useState(() => savedBooking().fulfillment || "pickup");
   const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [form, setForm] = useState({ full_name: "", phone: "", email: "", address: "", postal_code: "", city: "", notes: "" });
+  const [form, setForm] = useState(() => ({
+    full_name: "",
+    phone: "",
+    email: "",
+    address: "",
+    postal_code: "",
+    city: "",
+    notes: "",
+    requested_time: "",
+    ...savedBooking(),
+  }));
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [googleUser, setGoogleUser] = useState(null);
@@ -74,12 +93,14 @@ export default function Checkout() {
         google_credential: googleUser?.credential || undefined,
         fulfillment,
         payment_method: paymentMethod,
+        requested_time: form.requested_time ? form.requested_time.replace("T", " ") : undefined,
         customer: form,
         items: items.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
         notes: form.notes,
       });
       clearCart();
       if (campaign) sessionStorage.removeItem("everest-order-campaign");
+      sessionStorage.removeItem("everest-dashain-booking");
       navigate("/order-confirmation", { state: { order: res } });
     } catch (err) {
       setError(err.message || "Something went wrong placing your order.");
@@ -169,6 +190,11 @@ export default function Checkout() {
               <option value="card">Card on {fulfillment === "delivery" ? "delivery" : "pickup"}</option>
               <option value="mobilepay">MobilePay</option>
             </select>
+          </div>
+
+          <div className="field">
+            <label>Preferred date and time (optional)</label>
+            <input type="datetime-local" value={form.requested_time} onChange={(e) => update("requested_time", e.target.value)} />
           </div>
 
           <div className="field">

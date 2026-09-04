@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Icon from "../components/Icon";
 
 const prizes = [
@@ -27,14 +27,30 @@ function choosePrize() {
 }
 
 export default function DashainOffers() {
+  const navigate = useNavigate();
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [booking, setBooking] = useState({
+    full_name: "",
+    phone: "",
+    email: "",
+    fulfillment: "pickup",
+    requested_time: "",
+    notes: "",
+  });
 
   const segmentAngle = useMemo(() => 360 / prizes.length, []);
 
-  function startDashainBooking() {
+  function updateBooking(field, value) {
+    setBooking((current) => ({ ...current, [field]: value }));
+  }
+
+  function startDashainBooking(event) {
+    event.preventDefault();
+    sessionStorage.setItem("everest-dashain-booking", JSON.stringify(booking));
     sessionStorage.setItem("everest-order-campaign", "dashain");
+    navigate("/menu?campaign=dashain");
   }
 
   function spinWheel() {
@@ -92,9 +108,7 @@ export default function DashainOffers() {
               </p>
             </div>
             <div>
-              <Link to="/menu?campaign=dashain" className="btn btn-primary" onClick={startDashainBooking}>
-                Book Your Order
-              </Link>
+              <a href="#dashain-booking-form" className="btn btn-primary">Book Your Order</a>
             </div>
           </div>
 
@@ -129,6 +143,44 @@ export default function DashainOffers() {
               </div>
             </div>
           </div>
+
+          <form className="dashain-booking-form" id="dashain-booking-form" onSubmit={startDashainBooking}>
+            <div>
+              <span className="hero-kicker">START YOUR BOOKING</span>
+              <h3>Reserve your Dashain order</h3>
+              <p>Tell us who to prepare the order for, then choose your meat from the normal menu.</p>
+            </div>
+            <div className="dashain-booking-fields">
+              <div className="field">
+                <label htmlFor="dashain-name">Full name</label>
+                <input id="dashain-name" value={booking.full_name} onChange={(event) => updateBooking("full_name", event.target.value)} required />
+              </div>
+              <div className="field">
+                <label htmlFor="dashain-phone">Phone</label>
+                <input id="dashain-phone" value={booking.phone} onChange={(event) => updateBooking("phone", event.target.value)} required />
+              </div>
+              <div className="field">
+                <label htmlFor="dashain-email">Email (optional)</label>
+                <input id="dashain-email" type="email" value={booking.email} onChange={(event) => updateBooking("email", event.target.value)} />
+              </div>
+              <div className="field">
+                <label htmlFor="dashain-time">Preferred date and time (optional)</label>
+                <input id="dashain-time" type="datetime-local" value={booking.requested_time} onChange={(event) => updateBooking("requested_time", event.target.value)} />
+              </div>
+              <div className="field">
+                <label htmlFor="dashain-fulfillment">Order type</label>
+                <select id="dashain-fulfillment" value={booking.fulfillment} onChange={(event) => updateBooking("fulfillment", event.target.value)}>
+                  <option value="pickup">Pickup</option>
+                  <option value="delivery">Delivery</option>
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="dashain-notes">Notes (optional)</label>
+                <textarea id="dashain-notes" rows={2} value={booking.notes} onChange={(event) => updateBooking("notes", event.target.value)} placeholder="Cut preference or special request" />
+              </div>
+            </div>
+            <button className="btn btn-primary" type="submit">Continue to Dashain menu</button>
+          </form>
 
           <div
             style={{
@@ -225,9 +277,9 @@ export default function DashainOffers() {
                   >
                     Spin Again
                   </button>
-                  <Link to="/menu?campaign=dashain" className="btn btn-outline" onClick={startDashainBooking}>
+                  <a href="#dashain-booking-form" className="btn btn-outline" onClick={() => setWinner(null)}>
                     Use Offer & Book
-                  </Link>
+                  </a>
                 </div>
               </div>
             )}

@@ -1,11 +1,16 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useShopData } from "../lib/useShopData";
 import ProductCard from "../components/ProductCard";
 import Reveal from "../components/Reveal";
 
 export default function Menu() {
   const { categories, products, loading } = useShopData();
+  const { search } = useLocation();
   const [activeCat, setActiveCat] = useState("all");
+  const campaign = new URLSearchParams(search).get("campaign")
+    || sessionStorage.getItem("everest-order-campaign")
+    || "";
 
   const filtered = activeCat === "all" ? products : products.filter((p) => p.category_id === activeCat);
 
@@ -18,6 +23,16 @@ export default function Menu() {
           <p>Priced per kg unless noted.</p>
         </div>
       </div>
+
+      {campaign === "dashain" && (
+        <div className="campaign-banner">
+          <i className="bi bi-stars" aria-hidden="true" />
+          <div>
+            <strong>Dashain booking started</strong>
+            <span>Choose your items below, then continue to checkout for Google verification or guest checkout.</span>
+          </div>
+        </div>
+      )}
 
       <div className="category-pills">
         <button className={"pill" + (activeCat === "all" ? " active" : "")} onClick={() => setActiveCat("all")}>All</button>
