@@ -9,9 +9,18 @@ define('DB_HOST', 'localhost');
 define('DB_NAME', 'everest_butchery');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-// Set GOOGLE_CLIENT_ID in the Apache/PHP environment to enable optional
-// Google Sign-In validation. Never put a client secret in this file.
-define('GOOGLE_CLIENT_ID', getenv('GOOGLE_CLIENT_ID') ?: '');
+// Set GOOGLE_CLIENT_ID in the Apache/PHP environment, or create the local
+// backend/config.local.php file from config.local.php.example. Never put a
+// client secret in this project.
+$googleClientId = getenv('GOOGLE_CLIENT_ID') ?: '';
+$localConfigPath = dirname(__DIR__) . '/config.local.php';
+if (is_file($localConfigPath)) {
+    $localConfig = require $localConfigPath;
+    if (is_array($localConfig) && !empty($localConfig['GOOGLE_CLIENT_ID'])) {
+        $googleClientId = (string)$localConfig['GOOGLE_CLIENT_ID'];
+    }
+}
+define('GOOGLE_CLIENT_ID', $googleClientId);
 
 // Allow the Vite dev server (default port 5173) to call this API during development.
 // In production, set this to your real site origin instead of "*".

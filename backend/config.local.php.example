@@ -1,0 +1,7 @@
+<?php
+
+// Copy this file to config.local.php and replace the value with the same
+// public Web client ID used by frontend/.env. Do not add a client secret.
+return [
+    'GOOGLE_CLIENT_ID' => 'your-client-id.apps.googleusercontent.com',
+];

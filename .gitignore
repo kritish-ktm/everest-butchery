@@ -3,6 +3,7 @@ dist/
 .env
 .env.*
 !.env.example
+/backend/config.local.php
 
 *.log
 *.tmp
