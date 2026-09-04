@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { api } from "../lib/api";
 
@@ -8,6 +8,10 @@ const DELIVERY_FEE = 39;
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart();
   const navigate = useNavigate();
+  const { search } = useLocation();
+  const campaign = new URLSearchParams(search).get("campaign")
+    || sessionStorage.getItem("everest-order-campaign")
+    || "";
   const [fulfillment, setFulfillment] = useState("pickup");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [form, setForm] = useState({ full_name: "", phone: "", email: "", address: "", postal_code: "", city: "", notes: "" });
@@ -45,6 +49,7 @@ export default function Checkout() {
     try {
       const res = await api.createOrder({
         source: "online",
+        campaign: campaign || undefined,
         fulfillment,
         payment_method: paymentMethod,
         customer: form,
@@ -52,6 +57,7 @@ export default function Checkout() {
         notes: form.notes,
       });
       clearCart();
+      if (campaign) sessionStorage.removeItem("everest-order-campaign");
       navigate("/order-confirmation", { state: { order: res } });
     } catch (err) {
       setError(err.message || "Something went wrong placing your order.");
@@ -65,9 +71,21 @@ export default function Checkout() {
       <div className="page-heading compact-heading">
         <span className="page-kicker">PICKUP OR DELIVERY</span>
         <h2>Checkout</h2>
+        <p>{campaign === "dashain"
+          ? "Your Dashain booking will receive a dedicated reference number for easy pickup."
+          : "No account required. Complete your order as a guest."}</p>
       </div>
       <div className="checkout-grid">
         <form className="form-card" onSubmit={handleSubmit}>
+          <div className="checkout-mode">
+            <i className={`bi ${campaign === "dashain" ? "bi-stars" : "bi-person-check"}`} aria-hidden="true" />
+            <div>
+              <strong>{campaign === "dashain" ? "Dashain booking" : "Guest checkout"}</strong>
+              <span>{campaign === "dashain"
+                ? "Your order will be labelled DASH- with your customer code."
+                : "You can place this order without creating an account."}</span>
+            </div>
+          </div>
           {error && <div className="error-box">{error}</div>}
 
           <div className="toggle-row">

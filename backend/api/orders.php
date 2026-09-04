@@ -12,6 +12,20 @@ function generate_order_number(PDO $pdo): string {
     return sprintf('EB-%s-%04d', $today, $count);
 }
 
+function generate_dashain_order_number(PDO $pdo, string $customerName): string {
+    $letters = preg_replace('/[^A-Za-z0-9]/', '', $customerName) ?: 'CUS';
+    $customerCode = strtoupper(substr($letters, 0, 3));
+
+    do {
+        $uniqueId = strtoupper(bin2hex(random_bytes(3)));
+        $orderNumber = "DASH-$customerCode-$uniqueId";
+        $stmt = $pdo->prepare('SELECT id FROM orders WHERE order_number = ? LIMIT 1');
+        $stmt->execute([$orderNumber]);
+    } while ($stmt->fetch());
+
+    return $orderNumber;
+}
+
 if ($method === 'GET') {
     // GET /api/orders.php            -> list orders (admin/POS), newest first
     // GET /api/orders.php?id=12      -> one order with its items
@@ -122,7 +136,10 @@ if ($method === 'POST') {
         $fulfillment = $data['fulfillment'] ?? 'pickup';
         $deliveryFee = ($fulfillment === 'delivery') ? 39.00 : 0.00; // flat fee; adjust as needed
         $total = round($subtotal + $deliveryFee, 2);
-        $orderNumber = generate_order_number($pdo);
+        $isDashain = strtolower((string)($data['campaign'] ?? '')) === 'dashain';
+        $orderNumber = $isDashain
+            ? generate_dashain_order_number($pdo, (string)$data['customer']['full_name'])
+            : generate_order_number($pdo);
 
         $insertOrder = $pdo->prepare(
             'INSERT INTO orders (order_number, source, customer_id, fulfillment, status, payment_method, payment_status, subtotal, delivery_fee, total, requested_time, notes)

@@ -70,6 +70,10 @@ export const api = {
     const qs = new URLSearchParams(params).toString();
     return request(`orders.php${qs ? `?${qs}` : ""}`, {}, { auth: true });
   },
+  adminGetDashboard: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return request(`dashboard.php${qs ? `?${qs}` : ""}`, {}, { auth: true });
+  },
   getOrder: (id) => request(`orders.php?id=${id}`, {}, { auth: true }),
   updateOrderStatus: (payload) =>
     request("orders.php", { method: "PUT", body: JSON.stringify(payload) }, { auth: true }),

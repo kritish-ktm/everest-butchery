@@ -5,6 +5,7 @@ import { adminAuth } from "../lib/adminAuth";
 import { productImageUrl } from "../lib/imageUrl";
 import { categoryIcon } from "../lib/categoryIcon";
 import Icon from "../components/Icon";
+import SalesDashboard from "../components/SalesDashboard";
 
 const emptyProduct = {
   id: null,
@@ -22,6 +23,17 @@ const emptyProduct = {
 
 const ORDER_STATUSES = ["pending", "confirmed", "ready", "completed", "cancelled"];
 
+function dateString(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function defaultDashboardRange() {
+  const to = new Date();
+  const from = new Date();
+  from.setDate(to.getDate() - 6);
+  return { from: dateString(from), to: dateString(to) };
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const user = adminAuth.getUser();
@@ -36,6 +48,9 @@ export default function Admin() {
   const [form, setForm] = useState(emptyProduct);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [dashboard, setDashboard] = useState(null);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [dashboardRange, setDashboardRange] = useState(defaultDashboardRange);
 
   useEffect(() => {
     loadAll();
@@ -53,6 +68,8 @@ export default function Admin() {
       setCategories(catRes.categories);
       setProducts(prodRes.products);
       setOrders(orderRes.orders);
+      const dashboardRes = await api.adminGetDashboard(dashboardRange);
+      setDashboard(dashboardRes);
     } catch (err) {
       if (err.message.includes("401") || err.message.includes("required")) {
         navigate("/admin-login", { replace: true });
@@ -62,6 +79,23 @@ export default function Admin() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loadDashboard(range) {
+    setDashboardLoading(true);
+    try {
+      const result = await api.adminGetDashboard(range);
+      setDashboard(result);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDashboardLoading(false);
+    }
+  }
+
+  function handleDashboardRangeChange(range) {
+    setDashboardRange(range);
+    loadDashboard(range);
   }
 
   async function handleLogout() {
@@ -162,9 +196,10 @@ export default function Admin() {
   const previewUrl = productImageUrl(form.image_url);
 
   return (
-    <div className="section container">
-      <div className="section-head">
+    <div className="section container page-shell admin-page">
+      <div className="section-head page-heading">
         <div>
+          <span className="page-kicker">STAFF AREA</span>
           <h2>Admin Dashboard</h2>
           <p>{user?.full_name ? `Signed in as ${user.full_name}` : ""}</p>
         </div>
@@ -174,6 +209,9 @@ export default function Admin() {
       {error && <div className="error-box">{error}</div>}
 
       <div className="toggle-row" style={{ maxWidth: 320, marginBottom: 26 }}>
+        <button className={"toggle-btn" + (tab === "dashboard" ? " active" : "")} onClick={() => setTab("dashboard")}>
+          Dashboard
+        </button>
         <button className={"toggle-btn" + (tab === "products" ? " active" : "")} onClick={() => setTab("products")}>
           Products
         </button>
@@ -184,6 +222,13 @@ export default function Admin() {
 
       {loading ? (
         <p>Loading…</p>
+      ) : tab === "dashboard" ? (
+        <SalesDashboard
+          data={dashboard}
+          loading={dashboardLoading}
+          range={dashboardRange}
+          onRangeChange={handleDashboardRangeChange}
+        />
       ) : tab === "products" ? (
         <div>
           <form className="form-card" onSubmit={handleSaveProduct} style={{ marginBottom: 30 }}>

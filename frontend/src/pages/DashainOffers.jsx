@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import Icon from "../components/Icon";
 
 const prizes = [
@@ -31,6 +32,10 @@ export default function DashainOffers() {
   const [winner, setWinner] = useState(null);
 
   const segmentAngle = useMemo(() => 360 / prizes.length, []);
+
+  function startDashainBooking() {
+    sessionStorage.setItem("everest-order-campaign", "dashain");
+  }
 
   function spinWheel() {
     if (spinning) return;
@@ -87,9 +92,9 @@ export default function DashainOffers() {
               </p>
             </div>
             <div>
-              <a href="#book-dashain" className="btn btn-primary">
+              <Link to="/menu?campaign=dashain" className="btn btn-primary" onClick={startDashainBooking}>
                 Book Your Order
-              </a>
+              </Link>
             </div>
           </div>
 
@@ -220,9 +225,9 @@ export default function DashainOffers() {
                   >
                     Spin Again
                   </button>
-                  <a href="#book-dashain" className="btn btn-outline">
+                  <Link to="/menu?campaign=dashain" className="btn btn-outline" onClick={startDashainBooking}>
                     Use Offer & Book
-                  </a>
+                  </Link>
                 </div>
               </div>
             )}
