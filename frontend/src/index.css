@@ -2056,8 +2056,8 @@ h4 {
 
 .page-loader-mark {
   display: grid;
-  width: 64px;
-  height: 64px;
+  width: 400px;
+  height: 400px;
   margin-bottom: 20px;
   place-items: center;
   border: 1px solid rgba(245, 166, 35, 0.7);

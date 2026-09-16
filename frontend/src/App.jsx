@@ -50,9 +50,9 @@ function PageLoader({ children }) {
 
   return (
     <div className="page-loader" role="status" aria-live="polite">
-      <div className="page-loader-mark">EB</div>
+      <div className="page-loader-mark"><img src="/logo.svg" alt="Everest Butchery" /></div>
       <p>Everest Butchery</p>
-      <span>Preparing something fresh</span>
+      <span>Preparing something fresh.......</span>
       <div className="page-loader-track"><div /></div>
     </div>
   );
