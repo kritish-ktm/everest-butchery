@@ -102,7 +102,7 @@ export default function Admin() {
     try {
       await api.adminLogout();
     } catch {
-      // ignore — we clear the local session regardless
+      // ignore - we clear the local session regardless
     }
     adminAuth.clearSession();
     navigate("/admin-login", { replace: true });
@@ -372,7 +372,7 @@ export default function Admin() {
             {orders.map((o) => (
               <tr key={o.id}>
                 <td>{o.order_number}</td>
-                <td>{o.full_name || "—"} <span style={{ color: "#888" }}>{o.phone}</span></td>
+                <td>{o.full_name || "-"} <span style={{ color: "#888" }}>{o.phone}</span></td>
                 <td>{parseFloat(o.total).toFixed(0)} kr</td>
                 <td>{o.fulfillment}</td>
                 <td>

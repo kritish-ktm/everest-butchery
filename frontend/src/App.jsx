@@ -14,7 +14,7 @@ import Admin from "./pages/Admin";
 import { adminAuth } from "./lib/adminAuth";
 import DashainOffers from "./pages/DashainOffers";
 
-// Not linked anywhere in the public nav — reachable only by typing the URL,
+// Not linked anywhere in the public nav - reachable only by typing the URL,
 // and the backend independently rejects any admin request without a valid
 // token, so this guard is a UX convenience, not the real security boundary.
 function RequireAdmin({ children }) {

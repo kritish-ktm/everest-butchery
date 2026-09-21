@@ -33,7 +33,7 @@ export default function Home() {
               </h2>
 
               <p>
-                Goat, buffalo, chicken and Nepali pantry staples —
+                Goat, buffalo, chicken and Nepali pantry staples -
                 prepared the way your kitchen at home expects.
                 Order online for pickup or delivery.
               </p>
@@ -132,7 +132,7 @@ export default function Home() {
             </h2>
 
             <p>
-              From our kitchen to yours — bringing people
+              From our kitchen to yours - bringing people
               together around good food.
             </p>
 

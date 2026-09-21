@@ -19,7 +19,7 @@ export function useShopData() {
           setUsingSample(false);
         }
       } catch {
-        // Backend not reachable yet — keep sample data so the site is still browsable.
+        // Backend not reachable yet - keep sample data so the site is still browsable.
         if (!cancelled) setUsingSample(true);
       } finally {
         if (!cancelled) setLoading(false);

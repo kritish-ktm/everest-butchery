@@ -17,7 +17,7 @@ async function request(path, options = {}, { auth = false } = {}) {
   const data = await res.json().catch(() => ({}));
 
   if (res.status === 401 && auth) {
-    // Token missing/expired — drop the stale session so the UI can redirect to login.
+    // Token missing/expired - drop the stale session so the UI can redirect to login.
     adminAuth.clearSession();
   }
   if (!res.ok) {
@@ -60,7 +60,7 @@ export const api = {
     const res = await fetch(`${API_URL}/upload.php`, {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: formData, // no Content-Type header — the browser sets the multipart boundary itself
+      body: formData, // no Content-Type header - the browser sets the multipart boundary itself
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `Upload failed (${res.status})`);

@@ -203,7 +203,7 @@ export default function Checkout() {
           </div>
 
           <button className="btn btn-primary" style={{ width: "100%" }} disabled={submitting}>
-            {submitting ? "Placing order…" : `Place Order — ${total.toFixed(0)} kr`}
+            {submitting ? "Placing order…" : `Place Order - ${total.toFixed(0)} kr`}
           </button>
         </form>
 
@@ -216,7 +216,7 @@ export default function Checkout() {
             </div>
           ))}
           <div className="summary-row"><span>Subtotal</span><span>{subtotal.toFixed(0)} kr</span></div>
-          <div className="summary-row"><span>Delivery</span><span>{fulfillment === "delivery" ? `${DELIVERY_FEE} kr` : "—"}</span></div>
+          <div className="summary-row"><span>Delivery</span><span>{fulfillment === "delivery" ? `${DELIVERY_FEE} kr` : "-"}</span></div>
           <div className="summary-row summary-total"><span>Total</span><span>{total.toFixed(0)} kr</span></div>
         </div>
       </div>
