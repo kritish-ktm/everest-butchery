@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { supabase } from "../lib/supabase";
 
 const links = [
   { to: "/menu", label: "Menu" },
@@ -12,6 +13,16 @@ const links = [
 export default function Header() {
   const { count } = useCart();
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    if (!supabase) return undefined;
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user || null));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <header className="site-header">
@@ -30,6 +41,13 @@ export default function Header() {
         </nav>
 
         <div className="header-actions">
+          <Link to="/account" className="account-link" aria-label={user ? "Your account" : "Log in or create an account"}>
+            <span className="account-icon" aria-hidden="true">
+              <i className="bi bi-person-standing account-person-standing" />
+              <i className="bi bi-person-walking account-person-walking" />
+            </span>
+            <span>{user ? "Account" : "Login"}</span>
+          </Link>
           <Link to="/cart" className="cart-link" aria-label={`Cart, ${count} items`}>
             <i className="bi bi-bag" aria-hidden="true" />
             {count > 0 && <span className="cart-count">{count % 1 === 0 ? count : count.toFixed(1)}</span>}

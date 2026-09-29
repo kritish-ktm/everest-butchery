@@ -2260,6 +2260,97 @@ h4 {
   white-space: nowrap;
 }
 
+.account-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.account-link:hover,
+.account-link:focus-visible { color: var(--gold); }
+.account-icon { position: relative; display: grid; place-items: center; width: 22px; height: 26px; font-size: 21px; }
+.account-icon .bi { grid-area: 1 / 1; }
+.account-person-walking { opacity: 0; }
+.account-link:hover .account-person-standing,
+.account-link:focus-visible .account-person-standing { opacity: 0; }
+.account-link:hover .account-person-walking,
+.account-link:focus-visible .account-person-walking { opacity: 1; animation: header-walk 0.42s ease-in-out infinite alternate; }
+@keyframes header-walk { to { transform: translateY(-2px) rotate(-8deg); } }
+
+.account-page { max-width: 560px; min-height: 68vh; padding-top: 60px; }
+.account-heading { margin-bottom: 24px; text-align: center; }
+.account-heading h1 { font-size: 30px; line-height: 1.15; }
+.account-heading p { margin: 8px 0 0; color: var(--muted); }
+.account-panel { padding: 26px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); box-shadow: var(--shadow-sm); }
+.account-tabs { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 22px; border-bottom: 1px solid var(--line); }
+.account-tabs button { min-height: 42px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font: 600 14px var(--font); cursor: pointer; }
+.account-tabs button.active { border-bottom-color: var(--red); color: var(--red-dark); }
+.account-submit { position: relative; display: flex; width: 100%; min-height: 50px; justify-content: space-between; overflow: hidden; padding: 10px 14px 10px 18px; text-align: left; }
+.login-scene { position: relative; display: flex; align-items: center; justify-content: flex-end; width: 70px; height: 28px; flex: 0 0 70px; }
+.login-character { position: absolute; z-index: 1; left: 6px; top: 2px; width: 15px; height: 25px; transform-origin: center bottom; }
+.login-character .head { position: absolute; top: 0; left: 5px; width: 7px; height: 7px; border-radius: 50%; background: #fff; }
+.login-character .body { position: absolute; top: 8px; left: 7px; width: 4px; height: 9px; border-radius: 3px; background: #fff; }
+.login-character .arm,
+.login-character .leg { position: absolute; width: 3px; border-radius: 3px; background: #fff; transform-origin: top center; }
+.login-character .arm { top: 9px; left: 4px; height: 8px; transform: rotate(28deg); }
+.login-character .leg { top: 15px; left: 7px; height: 9px; }
+.login-character .leg-one { transform: rotate(6deg); }
+.login-character .leg-two { left: 9px; transform: rotate(-7deg); }
+.login-door { position: absolute; right: 0; bottom: 1px; font-size: 24px; line-height: 1; }
+.account-submit:hover .login-character,
+.account-submit:focus-visible .login-character { animation: character-walk 0.26s ease-in-out infinite alternate; }
+.account-submit:hover .leg-one,
+.account-submit:focus-visible .leg-one { animation: legs-one 0.26s ease-in-out infinite alternate; }
+.account-submit:hover .leg-two,
+.account-submit:focus-visible .leg-two { animation: legs-two 0.26s ease-in-out infinite alternate; }
+.account-submit.is-entering .login-character { animation: character-enter 0.82s ease-in forwards; }
+.account-submit.is-entering .login-door { animation: door-welcome 0.82s ease-in forwards; }
+@keyframes character-walk { to { transform: translateY(-2px); } }
+@keyframes legs-one { to { transform: rotate(27deg); } }
+@keyframes legs-two { to { transform: rotate(-27deg); } }
+@keyframes character-enter { 0% { left: 6px; opacity: 1; } 68% { left: 42px; opacity: 1; } 100% { left: 51px; opacity: 0; transform: scale(0.65); } }
+@keyframes door-welcome { 45%, 75% { transform: perspective(24px) rotateY(-16deg); } 100% { transform: perspective(24px) rotateY(-24deg); } }
+.account-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #888; font-size: 12px; }
+.account-divider::before,
+.account-divider::after { height: 1px; flex: 1; background: var(--line); content: ""; }
+.account-panel > .google-signin-button { display: flex; justify-content: center; min-height: 42px; }
+.account-panel > .google-signin-note { max-width: none; text-align: center; }
+.account-terms { margin: 16px 0 0; color: #888; font-size: 11px; text-align: center; }
+.account-help { margin: 16px 0 0; color: var(--muted); font-size: 13px; text-align: center; }
+.account-help a { color: var(--red-dark); font-weight: 600; text-decoration: underline; }
+.account-message { margin-bottom: 16px; padding: 11px 13px; border: 1px solid #b8d9c1; border-radius: 6px; background: #f0f8f2; color: #245d35; font-size: 13px; }
+.account-identity { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+.account-avatar { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: var(--red-soft); color: var(--red-dark); font-size: 20px; }
+.account-identity strong,
+.account-identity span { display: block; }
+.account-identity span { color: var(--muted); font-size: 13px; }
+.account-signout { margin-left: 14px; padding: 10px; border: 0; background: transparent; color: var(--muted); font: 600 13px var(--font); cursor: pointer; }
+.account-signout:hover { color: var(--red-dark); }
+
+@media (max-width: 780px) {
+  .header-actions { gap: 14px; }
+  .account-link { gap: 4px; font-size: 12px; }
+}
+@media (max-width: 480px) {
+  .account-page { padding-top: 40px; }
+  .account-panel { padding: 20px 16px; }
+  .account-heading h1 { font-size: 26px; }
+  .account-link > span:last-child { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .account-link:hover .account-person-walking,
+  .account-link:focus-visible .account-person-walking,
+  .account-submit:hover .login-character,
+  .account-submit:focus-visible .login-character,
+  .account-submit.is-entering .login-character,
+  .account-submit.is-entering .login-door { animation: none; }
+}
+
 .checkout-mode > .bi {
   margin-top: 2px;
   font-size: 20px;

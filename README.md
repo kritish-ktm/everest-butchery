@@ -30,6 +30,12 @@ The React storefront can run on Vercel. Its Supabase data adapter replaces the P
 3. In Vercel, import this repository and set the Root Directory to `frontend`. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from Supabase project settings. These are public client values; do not add a service-role key.
 4. Add the production Vercel URL to Supabase Auth's allowed redirect URLs and to the Google OAuth authorized origins if using Google sign-in. Deploy.
 
+## Google Search
+
+Set `VITE_SITE_URL` in Vercel to the canonical public domain (`https://everestbutchery.dk` once its DNS/domain is connected). The production build generates `robots.txt` and `sitemap.xml`, and adds page titles, descriptions, canonical URLs, social previews, and local business structured data. After the site is live, add the domain as a URL-prefix property in Google Search Console, verify it with the HTML tag method, then set the tag's token as `VITE_GOOGLE_SITE_VERIFICATION` in Vercel and redeploy. Submit `https://everestbutchery.dk/sitemap.xml` in Search Console. Add/claim the shop in Google Business Profile separately to appear as a local business listing; website metadata alone does not guarantee search placement.
+
 For local Supabase development, copy `frontend/.env.example` to `frontend/.env.local` and fill in the Supabase values. Remove/omit `VITE_API_URL` when using Supabase. To continue using XAMPP, leave the Supabase values unset.
 
 The old PHP/MySQL backend remains for XAMPP. Vercel hosts the frontend; Supabase provides its database, authentication, and image storage.
+
+Customer accounts use Supabase Auth. Add both the local and production `/account` URLs to Supabase Authentication's allowed redirect URLs. To enable Google login, configure Google under Supabase Authentication providers, set `VITE_GOOGLE_CLIENT_ID` in local and Vercel environments, and register the local and deployed site origins in Google OAuth. The Google OAuth client secret belongs only in Supabase, never in Vite environment variables.

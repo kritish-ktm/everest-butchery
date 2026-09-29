@@ -13,6 +13,8 @@ import AdminLogin from "./pages/AdminLogin";
 import Admin from "./pages/Admin";
 import { adminAuth } from "./lib/adminAuth";
 import DashainOffers from "./pages/DashainOffers";
+import Seo from "./components/Seo";
+import Account from "./pages/Account";
 
 // Not linked anywhere in the public nav - reachable only by typing the URL,
 // and the backend independently rejects any admin request without a valid
@@ -61,6 +63,7 @@ function PageLoader({ children }) {
 export default function App() {
   return (
     <>
+      <Seo />
       <Header />
       <main>
         <PageLoader>
@@ -72,6 +75,7 @@ export default function App() {
             <Route path="/order-confirmation" element={<OrderConfirmation />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/account" element={<Account />} />
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/dashain-offers" element={<DashainOffers />} />
             <Route
