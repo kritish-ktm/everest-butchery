@@ -1,4 +1,4 @@
--- Everest Butchery — database schema
+-- Everest Butchery - database schema
 -- Import this via phpMyAdmin (XAMPP) or:
 --   mysql -u root -p < schema.sql
 
@@ -40,7 +40,7 @@ CREATE TABLE products (
 );
 
 -- ---------------------------------------------------------------
--- Customers (simple — expand later with auth if needed)
+-- Customers (simple - expand later with auth if needed)
 -- ---------------------------------------------------------------
 CREATE TABLE customers (
   id            INT AUTO_INCREMENT PRIMARY KEY,

@@ -4,7 +4,7 @@ require_once __DIR__ . '/config.php';
 $method = $_SERVER['REQUEST_METHOD'];
 
 // Deletes an uploaded product image file from disk, but only if it lives
-// inside our own uploads/products/ folder — never touches anything else.
+// inside our own uploads/products/ folder - never touches anything else.
 function delete_uploaded_image(?string $imageUrl): void {
     if (!$imageUrl || strpos($imageUrl, 'uploads/products/') !== 0) return;
     $path = __DIR__ . '/../' . $imageUrl;

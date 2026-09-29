@@ -30,7 +30,7 @@ if ($method === 'GET') {
     // GET /api/orders.php            -> list orders (admin/POS), newest first
     // GET /api/orders.php?id=12      -> one order with its items
     // GET /api/orders.php?status=pending
-    // Order data includes customer names/phones/addresses — admin only.
+    // Order data includes customer names/phones/addresses - admin only.
     require_admin();
 
     if (isset($_GET['id'])) {
@@ -197,7 +197,7 @@ if ($method === 'POST') {
 
 if ($method === 'PUT') {
     require_admin();
-    // Update order status (admin/POS) — { "id": 12, "status": "confirmed" }
+    // Update order status (admin/POS) - { "id": 12, "status": "confirmed" }
     $data = json_input();
     if (empty($data['id'])) fail('Missing field: id');
 

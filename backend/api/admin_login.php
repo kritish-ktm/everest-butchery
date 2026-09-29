@@ -19,7 +19,7 @@ $stmt->execute([$email]);
 $user = $stmt->fetch();
 
 // Same generic error whether the email doesn't exist or the password is
-// wrong — don't tell attackers which one it was.
+// wrong - don't tell attackers which one it was.
 if (!$user || !password_verify($password, $user['password_hash'])) {
     fail('Invalid email or password', 401);
 }

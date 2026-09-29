@@ -1,4 +1,5 @@
 import { adminAuth } from "./adminAuth";
+import { supabase, usesSupabase } from "./supabase";
 
 // Base URL of the PHP backend. During local dev with XAMPP, the backend/
 // folder is served from http://localhost/everest-butchery/backend
@@ -6,7 +7,141 @@ import { adminAuth } from "./adminAuth";
 // Adjust VITE_API_URL in a .env file if your setup differs.
 export const API_URL = import.meta.env.VITE_API_URL || "http://localhost/everest-butchery/backend/api";
 
+const unwrap = ({ data, error }) => {
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+async function supabaseApi(path, options = {}) {
+  const method = options.method || "GET";
+  const body = options.body ? JSON.parse(options.body) : {};
+  const [endpoint, queryString = ""] = path.split("?");
+  const query = new URLSearchParams(queryString);
+
+  if (endpoint === "categories.php") {
+    const { data, error } = await supabase.from("categories").select("*").order("sort_order");
+    return { categories: unwrap({ data, error }) };
+  }
+  if (endpoint === "products.php") {
+    if (method === "GET") {
+      let request = supabase.from("products").select("*, categories(name_en,name_np,sort_order)");
+      if (!query.has("include_out_of_stock")) request = request.eq("in_stock", true).eq("is_visible", true);
+      if (query.has("category")) request = request.eq("category_id", Number(query.get("category")));
+      request = request.order("is_featured", { ascending: false }).order("name_en");
+      if (query.has("id")) {
+        const { data, error } = await request.eq("id", Number(query.get("id"))).single();
+        const product = unwrap({ data, error });
+        return { ...product, category_name_en: product.categories?.name_en, category_name_np: product.categories?.name_np };
+      }
+      const { data, error } = await request;
+      const products = unwrap({ data, error }).map((p) => ({ ...p, category_name_en: p.categories?.name_en, category_name_np: p.categories?.name_np }));
+      products.sort((a, b) => (a.categories?.sort_order ?? 0) - (b.categories?.sort_order ?? 0) || Number(b.is_featured) - Number(a.is_featured) || a.name_en.localeCompare(b.name_en));
+      return { products };
+    }
+    if (method === "POST") {
+      const { data, error } = await supabase.from("products").insert(productPayload(body)).select("id").single();
+      return unwrap({ data, error });
+    }
+    if (method === "PUT") {
+      const { id, ...values } = body;
+      const { error } = await supabase.from("products").update(productPayload(values)).eq("id", id);
+      unwrap({ data: true, error });
+      return { updated: true };
+    }
+    if (method === "DELETE") {
+      const { error } = await supabase.from("products").delete().eq("id", Number(query.get("id")));
+      unwrap({ data: true, error });
+      return { deleted: true };
+    }
+  }
+  if (endpoint === "orders.php") {
+    if (method === "POST") return unwrap(await supabase.rpc("create_order", { payload: body }));
+    if (method === "PUT") {
+      const { id, ...values } = body;
+      const { error } = await supabase.from("orders").update(values).eq("id", id);
+      unwrap({ data: true, error });
+      return { updated: true };
+    }
+    if (method === "GET" && query.has("id")) {
+      const { data, error } = await supabase.from("orders").select("*, customers(*), order_items(*)").eq("id", Number(query.get("id"))).single();
+      const order = unwrap({ data, error });
+      return { ...order, ...order.customers, items: order.order_items };
+    }
+    if (method === "GET") {
+      let request = supabase.from("orders").select("*, customers(full_name,phone)").order("created_at", { ascending: false }).limit(200);
+      if (query.has("status")) request = request.eq("status", query.get("status"));
+      if (query.has("source")) request = request.eq("source", query.get("source"));
+      const { data, error } = await request;
+      return { orders: unwrap({ data, error }).map((o) => ({ ...o, ...o.customers })) };
+    }
+  }
+  if (endpoint === "dashboard.php") return dashboardData(query);
+  if (endpoint === "admin_login.php") {
+    const { data, error } = await supabase.auth.signInWithPassword(body);
+    const user = unwrap({ data, error }).user;
+    if (user?.app_metadata?.role !== "admin") {
+      await supabase.auth.signOut();
+      throw new Error("This account is not authorized for admin access.");
+    }
+    return { token: data.session.access_token, user: { id: user.id, full_name: user.user_metadata?.full_name || user.email, email: user.email, role: "admin" } };
+  }
+  if (endpoint === "admin_logout.php") {
+    unwrap(await supabase.auth.signOut());
+    return { loggedOut: true };
+  }
+  if (endpoint === "google_login.php") {
+    const { data, error } = await supabase.auth.signInWithIdToken({ provider: "google", token: body.credential });
+    const user = unwrap({ data, error }).user;
+    return { user: { name: user.user_metadata?.full_name || user.user_metadata?.name, email: user.email } };
+  }
+  if (endpoint === "upload.php") {
+    const file = options.file;
+    if (file.size > 5 * 1024 * 1024) throw new Error("Image is too large (max 5MB)");
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) throw new Error("Please upload a JPG, PNG, WEBP or GIF image");
+    const path = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+    const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: false, contentType: file.type });
+    unwrap({ data: true, error });
+    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+    return { path: data.publicUrl };
+  }
+  throw new Error(`Unsupported Supabase API endpoint: ${endpoint}`);
+}
+
+function productPayload(values) {
+  const fields = ["category_id", "name_en", "name_np", "description", "unit", "price_per_unit", "image_url", "is_halal", "in_stock", "is_visible", "is_featured"];
+  return Object.fromEntries(Object.entries(values).filter(([key]) => fields.includes(key)).map(([key, value]) => [
+    key,
+    ["is_halal", "in_stock", "is_visible", "is_featured"].includes(key) ? Boolean(value) : value,
+  ]));
+}
+
+async function dashboardData(query) {
+  const from = query.get("from") || new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+  const to = query.get("to") || new Date().toISOString().slice(0, 10);
+  const { data, error } = await supabase.from("orders").select("id,total,created_at,order_items(quantity)").neq("status", "cancelled").gte("created_at", `${from}T00:00:00`).lte("created_at", `${to}T23:59:59.999`);
+  const rows = unwrap({ data, error });
+  const days = new Map();
+  for (const order of rows) {
+    const date = order.created_at.slice(0, 10);
+    const row = days.get(date) || { date, label: new Date(`${date}T12:00:00`).toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" }), orders: 0, sales: 0 };
+    row.orders += 1;
+    row.sales += Number(order.total);
+    days.set(date, row);
+  }
+  const series = [];
+  for (let day = new Date(`${from}T12:00:00`); day <= new Date(`${to}T12:00:00`); day.setDate(day.getDate() + 1)) {
+    const date = day.toISOString().slice(0, 10);
+    series.push(days.get(date) || { date, label: day.toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" }), orders: 0, sales: 0 });
+  }
+  const sales = rows.reduce((sum, row) => sum + Number(row.total), 0);
+  return { range: { from, to }, summary: { orders: rows.length, sales, average_order: rows.length ? sales / rows.length : 0, items_sold: rows.reduce((sum, row) => sum + row.order_items.reduce((n, item) => n + Number(item.quantity), 0), 0) }, series };
+}
+
 async function request(path, options = {}, { auth = false } = {}) {
+  if (usesSupabase) {
+    if (auth && !adminAuth.isLoggedIn()) throw new Error("Admin login required");
+    return supabaseApi(path, options);
+  }
   const headers = { "Content-Type": "application/json" };
   if (auth) {
     const token = adminAuth.getToken();
@@ -54,6 +189,7 @@ export const api = {
 
   // --- Admin: product image upload ---
   uploadProductImage: async (file) => {
+    if (usesSupabase) return supabaseApi("upload.php", { file });
     const token = adminAuth.getToken();
     const formData = new FormData();
     formData.append("image", file);

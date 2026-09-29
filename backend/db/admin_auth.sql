@@ -1,4 +1,4 @@
--- Everest Butchery — admin auth
+-- Everest Butchery - admin auth
 -- Run this AFTER schema.sql (via phpMyAdmin > Import, or mysql CLI):
 --   mysql -u root -p everest_butchery < admin_auth.sql
 

@@ -1,4 +1,4 @@
--- Everest Butchery — menu visibility
+-- Everest Butchery - menu visibility
 -- Lets admin hide a product from the customer-facing menu without deleting
 -- it or marking it out of stock (e.g. a seasonal item that's not ready yet).
 -- Run this via phpMyAdmin > Import (after schema.sql).

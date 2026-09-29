@@ -15,13 +15,13 @@ if (empty($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
 
 $file = $_FILES['image'];
 
-// 5MB cap — product photos don't need to be bigger than this.
+// 5MB cap - product photos don't need to be bigger than this.
 $maxBytes = 5 * 1024 * 1024;
 if ($file['size'] > $maxBytes) {
     fail('Image is too large (max 5MB)');
 }
 
-// Validate the actual file content, not just the filename/extension —
+// Validate the actual file content, not just the filename/extension -
 // getimagesize() fails on anything that isn't really an image.
 $info = @getimagesize($file['tmp_name']);
 if ($info === false) {
@@ -40,7 +40,7 @@ if (!isset($allowed[$mime])) {
 }
 
 $ext = $allowed[$mime];
-$filename = bin2hex(random_bytes(16)) . '.' . $ext; // random name — never trust the original filename
+$filename = bin2hex(random_bytes(16)) . '.' . $ext; // random name - never trust the original filename
 $destDir = __DIR__ . '/../uploads/products';
 if (!is_dir($destDir)) {
     mkdir($destDir, 0755, true);
