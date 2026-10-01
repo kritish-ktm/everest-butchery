@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { api } from "../lib/api";
 import GoogleSignInButton from "../components/GoogleSignInButton";
+import { supabase } from "../lib/supabase";
 
 const DELIVERY_FEE = 39;
 
@@ -37,8 +38,38 @@ export default function Checkout() {
   }));
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [googleUser, setGoogleUser] = useState(null);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [authUser, setAuthUser] = useState(null);
+  const [authReady, setAuthReady] = useState(!supabase);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authSubmitting, setAuthSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!supabase) return undefined;
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      setAuthUser(data.session?.user || null);
+      setAuthReady(true);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthUser(session?.user || null);
+      setAuthReady(true);
+    });
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!authUser) return;
+    setForm((current) => ({
+      ...current,
+      full_name: current.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || "",
+      email: current.email || authUser.email || "",
+    }));
+  }, [authUser]);
 
   if (items.length === 0) {
     return (
@@ -49,6 +80,10 @@ export default function Checkout() {
     );
   }
 
+  if (!authReady) {
+    return <div className="section container empty-state page-shell" role="status">Checking your account…</div>;
+  }
+
   const total = subtotal + (fulfillment === "delivery" ? DELIVERY_FEE : 0);
 
   function update(field, value) {
@@ -57,19 +92,28 @@ export default function Checkout() {
 
   async function handleGoogleCredential(credential) {
     setError("");
-    setGoogleLoading(true);
+    setAuthSubmitting(true);
     try {
-      const result = await api.googleLogin(credential);
-      setGoogleUser({ ...result.user, credential });
-      setForm((current) => ({
-        ...current,
-        full_name: result.user.name || current.full_name,
-        email: result.user.email || current.email,
-      }));
+      const { error: authError } = await supabase.auth.signInWithIdToken({ provider: "google", token: credential });
+      if (authError) throw authError;
     } catch (err) {
-      setError(err.message || "Google identity could not be validated.");
+      setError(err.message || "Google sign-in could not be completed.");
     } finally {
-      setGoogleLoading(false);
+      setAuthSubmitting(false);
+    }
+  }
+
+  async function handleAccountLogin(event) {
+    event.preventDefault();
+    setError("");
+    setAuthSubmitting(true);
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({ email: authEmail.trim(), password: authPassword });
+      if (authError) throw authError;
+    } catch (authError) {
+      setError(authError.message || "We could not sign you in.");
+    } finally {
+      setAuthSubmitting(false);
     }
   }
 
@@ -90,7 +134,6 @@ export default function Checkout() {
       const res = await api.createOrder({
         source: "online",
         campaign: campaign || undefined,
-        google_credential: googleUser?.credential || undefined,
         fulfillment,
         payment_method: paymentMethod,
         requested_time: form.requested_time ? form.requested_time.replace("T", " ") : undefined,
@@ -116,32 +159,49 @@ export default function Checkout() {
         <h2>Checkout</h2>
         <p>{campaign === "dashain"
           ? "Your Dashain booking will receive a dedicated reference number for easy pickup."
-          : "No account required. Complete your order as a guest."}</p>
+          : "Sign in to confirm your details and complete your order."}</p>
       </div>
+      {!authUser ? (
+        <section className="checkout-auth-gate" aria-labelledby="checkout-login-title">
+          <div className="checkout-auth-copy">
+            <span className="page-kicker">ACCOUNT REQUIRED</span>
+            <h3 id="checkout-login-title">Sign in to continue</h3>
+            <p>Your cart is saved while you sign in. After that, you can finish your order here.</p>
+          </div>
+          {error && <div className="error-box" role="alert">{error}</div>}
+          {!supabase ? (
+            <div className="error-box">Account sign-in is unavailable until Supabase is configured.</div>
+          ) : (
+            <>
+              <form onSubmit={handleAccountLogin}>
+                <div className="field">
+                  <label htmlFor="checkout-email">Email</label>
+                  <input id="checkout-email" type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" required />
+                </div>
+                <div className="field">
+                  <label htmlFor="checkout-password">Password</label>
+                  <input id="checkout-password" type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="current-password" required />
+                </div>
+                <button className="btn btn-primary" type="submit" disabled={authSubmitting}>
+                  {authSubmitting ? "Signing in…" : "Log In"}
+                </button>
+              </form>
+              <div className="account-divider"><span>or</span></div>
+              <GoogleSignInButton onCredential={handleGoogleCredential} />
+              <p className="checkout-create-account">New here? <Link to="/account">Create an account</Link></p>
+            </>
+          )}
+        </section>
+      ) : (
       <div className="checkout-grid">
         <form className="form-card" onSubmit={handleSubmit}>
-          <div className="google-signin-card">
-            <div className="google-signin-copy">
-              <strong>{googleUser ? "Google verified" : "Optional: continue with Google"}</strong>
-              <span>{googleUser
-                ? `${googleUser.email} is verified for this order.`
-                : "Use Google to validate your name and email, or continue as a guest."}</span>
-            </div>
-            {googleLoading ? (
-              <span className="google-signin-loading"><i className="bi bi-arrow-repeat" aria-hidden="true" /> Checking…</span>
-            ) : googleUser ? (
-              <button type="button" className="text-btn" onClick={() => setGoogleUser(null)}>Use guest checkout</button>
-            ) : (
-              <GoogleSignInButton onCredential={handleGoogleCredential} />
-            )}
-          </div>
           <div className="checkout-mode">
             <i className={`bi ${campaign === "dashain" ? "bi-stars" : "bi-person-check"}`} aria-hidden="true" />
             <div>
-              <strong>{campaign === "dashain" ? "Dashain booking" : "Guest checkout"}</strong>
+              <strong>{campaign === "dashain" ? "Dashain booking" : "Signed in"}</strong>
               <span>{campaign === "dashain"
                 ? "Your order will be labelled DASH- with your customer code."
-                : "You can place this order without creating an account."}</span>
+                : `Signed in as ${authUser.email || "your account"}.`}</span>
             </div>
           </div>
           {error && <div className="error-box">{error}</div>}
@@ -220,6 +280,7 @@ export default function Checkout() {
           <div className="summary-row summary-total"><span>Total</span><span>{total.toFixed(0)} kr</span></div>
         </div>
       </div>
+      )}
     </div>
   );
 }

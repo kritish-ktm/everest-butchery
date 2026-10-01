@@ -15,6 +15,7 @@ import { adminAuth } from "./lib/adminAuth";
 import DashainOffers from "./pages/DashainOffers";
 import Seo from "./components/Seo";
 import Account from "./pages/Account";
+import PasswordRecoveryGate from "./components/PasswordRecoveryGate";
 
 // Not linked anywhere in the public nav - reachable only by typing the URL,
 // and the backend independently rejects any admin request without a valid
@@ -64,6 +65,7 @@ export default function App() {
   return (
     <>
       <Seo />
+      <PasswordRecoveryGate />
       <Header />
       <main>
         <PageLoader>

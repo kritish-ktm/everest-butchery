@@ -47,7 +47,13 @@ export default function Account() {
     setMessage("");
     setSubmitting(true);
     try {
-      if (mode === "signup") {
+      if (mode === "recover") {
+        const { error: authError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: `${window.location.origin}/account`,
+        });
+        if (authError) throw authError;
+        setMessage("If an account exists for that email, a recovery link has been sent.");
+      } else if (mode === "signup") {
         const { data, error: authError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
@@ -122,8 +128,8 @@ export default function Account() {
     <section className="section container page-shell account-page">
       <div className="account-heading">
         <span className="page-kicker">EVEREST BUTCHERY</span>
-        <h1>{user ? "Your Account" : mode === "signup" ? "Create Account" : "Welcome Back"}</h1>
-        <p>{user ? "Manage your profile details." : "Sign in to your account or create one to get started."}</p>
+        <h1>{user ? "Your Account" : mode === "signup" ? "Create Account" : mode === "recover" ? "Reset Password" : "Welcome Back"}</h1>
+        <p>{user ? "Manage your profile details." : mode === "recover" ? "We’ll send a recovery link to your email address." : "Sign in to your account or create one to get started."}</p>
       </div>
 
       <div className="account-panel">
@@ -168,22 +174,32 @@ export default function Account() {
                 <label htmlFor="account-email">Email</label>
                 <input id="account-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required />
               </div>
-              <div className="field">
-                <label htmlFor="account-password">Password</label>
-                <input id="account-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === "signup" ? "new-password" : "current-password"} minLength={8} required />
-              </div>
+              {mode !== "recover" && (
+                <div className="field">
+                  <label htmlFor="account-password">Password</label>
+                  <input id="account-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === "signup" ? "new-password" : "current-password"} minLength={8} required />
+                </div>
+              )}
               <button className={`btn btn-primary account-submit${arriving ? " is-entering" : ""}`} type="submit" disabled={submitting || arriving}>
-                <span>{submitting ? "Please wait…" : mode === "signup" ? "Create Account" : "Log In"}</span>
-                <span className="login-scene" aria-hidden="true">
+                <span>{submitting ? "Please wait…" : mode === "signup" ? "Create Account" : mode === "recover" ? "Send recovery link" : "Log In"}</span>
+                {mode !== "recover" && <span className="login-scene" aria-hidden="true">
                   <span className="login-character"><i className="head" /><i className="body" /><i className="arm" /><i className="leg leg-one" /><i className="leg leg-two" /></span>
                   <i className="bi bi-door-open login-door" />
-                </span>
+                </span>}
               </button>
             </form>
 
-            <div className="account-divider"><span>or</span></div>
-            <GoogleSignInButton onCredential={handleGoogleCredential} />
-            <p className="account-terms">By continuing, you agree to use your account for Everest Butchery services.</p>
+            {mode === "login" ? (
+              <button className="account-reset-link" type="button" onClick={() => { setMode("recover"); setError(""); setMessage(""); }}>Forgot password?</button>
+            ) : mode === "recover" ? (
+              <button className="account-reset-link" type="button" onClick={() => { setMode("login"); setError(""); setMessage(""); }}>Back to log in</button>
+            ) : (
+              <>
+                <div className="account-divider"><span>or</span></div>
+                <GoogleSignInButton onCredential={handleGoogleCredential} />
+                <p className="account-terms">By continuing, you agree to use your account for Everest Butchery services.</p>
+              </>
+            )}
           </>
         )}
       </div>

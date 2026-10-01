@@ -29,7 +29,7 @@ export default function Menu() {
           <i className="bi bi-stars" aria-hidden="true" />
           <div>
             <strong>Dashain booking started</strong>
-            <span>Choose your items below, then continue to checkout for Google verification or guest checkout.</span>
+            <span>Choose your items below, then sign in at checkout to complete your order.</span>
           </div>
         </div>
       )}
