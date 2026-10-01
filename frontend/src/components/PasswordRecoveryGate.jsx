@@ -3,25 +3,31 @@ import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 export default function PasswordRecoveryGate() {
+  const initialHashParams = new URLSearchParams(window.location.hash.slice(1));
+  const hasRecoveryError = initialHashParams.has("error") || initialHashParams.has("error_code");
   const [active, setActive] = useState(false);
-  const [expired, setExpired] = useState(false);
+  const [expired, setExpired] = useState(hasRecoveryError);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const expiredMessage = hasRecoveryError ? "This recovery link is invalid or has expired. Request a new one and open the newest email." : "";
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!supabase) return undefined;
 
-    const params = new URLSearchParams(window.location.hash.slice(1));
-    if (params.get("error_code") === "otp_expired") {
-      setExpired(true);
-    }
-
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    const searchParams = new URLSearchParams(window.location.search);
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") setActive(true);
     });
+
+    if (hashParams.get("type") === "recovery" || searchParams.has("code")) {
+      supabase.auth.getSession().then(({ data, error: sessionError }) => {
+        if (!sessionError && data.session) setActive(true);
+      });
+    }
 
     return () => subscription.unsubscribe();
   }, []);
@@ -49,13 +55,13 @@ export default function PasswordRecoveryGate() {
         <div className="account-heading">
           <span className="page-kicker">EVEREST BUTCHERY</span>
           <h1>{expired ? "Link expired" : done ? "Password updated" : "Set a new password"}</h1>
-          <p>{expired ? "This recovery link has expired or was already used." : done ? "Your password is ready to use." : "Choose a new password for your account."}</p>
+          <p>{expired ? expiredMessage : done ? "Your password is ready to use." : "Choose a new password for your Everest Butchery admin account."}</p>
         </div>
 
         <div className="account-panel">
           {error && <div className="error-box" role="alert">{error}</div>}
           {expired ? (
-            <Link className="btn btn-primary" to="/account" onClick={() => {
+            <Link className="btn btn-primary" to="/admin-login?reset=1" onClick={() => {
               window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
               setExpired(false);
             }}>Request a fresh recovery link</Link>

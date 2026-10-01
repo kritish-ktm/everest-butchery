@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -27,40 +26,6 @@ function RequireAdmin({ children }) {
   return children;
 }
 
-function PageLoader({ children }) {
-  const { pathname } = useLocation();
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const key = `everest-page-loaded:${pathname}`;
-    const alreadyLoaded = sessionStorage.getItem(key) === "1";
-
-    if (alreadyLoaded) {
-      setLoading(false);
-      return undefined;
-    }
-
-    setLoading(true);
-    const timer = window.setTimeout(() => {
-      sessionStorage.setItem(key, "1");
-      setLoading(false);
-    }, 3000);
-
-    return () => window.clearTimeout(timer);
-  }, [pathname]);
-
-  if (!loading) return children;
-
-  return (
-    <div className="page-loader" role="status" aria-live="polite">
-      <div className="page-loader-mark"><img src="/logo.svg" alt="Everest Butchery" /></div>
-      <p>Everest Butchery</p>
-      <span>Preparing something fresh.......</span>
-      <div className="page-loader-track"><div /></div>
-    </div>
-  );
-}
-
 export default function App() {
   return (
     <>
@@ -68,28 +33,26 @@ export default function App() {
       <PasswordRecoveryGate />
       <Header />
       <main>
-        <PageLoader>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/menu" element={<Menu />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/order-confirmation" element={<OrderConfirmation />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/account" element={<Account />} />
-            <Route path="/admin-login" element={<AdminLogin />} />
-            <Route path="/dashain-offers" element={<DashainOffers />} />
-            <Route
-              path="/admin"
-              element={
-                <RequireAdmin>
-                  <Admin />
-                </RequireAdmin>
-              }
-            />
-          </Routes>
-        </PageLoader>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/menu" element={<Menu />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order-confirmation" element={<OrderConfirmation />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
+          <Route path="/dashain-offers" element={<DashainOffers />} />
+          <Route
+            path="/admin"
+            element={
+              <RequireAdmin>
+                <Admin />
+              </RequireAdmin>
+            }
+          />
+        </Routes>
       </main>
       <Footer />
     </>
