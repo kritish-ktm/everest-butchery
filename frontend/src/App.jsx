@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -27,32 +27,38 @@ function RequireAdmin({ children }) {
 }
 
 export default function App() {
+  const { pathname } = useLocation();
+
   return (
     <>
       <Seo />
       <PasswordRecoveryGate />
       <Header />
       <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/menu" element={<Menu />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/order-confirmation" element={<OrderConfirmation />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/account" element={<Account />} />
-          <Route path="/admin-login" element={<AdminLogin />} />
-          <Route path="/dashain-offers" element={<DashainOffers />} />
-          <Route
-            path="/admin"
-            element={
-              <RequireAdmin>
-                <Admin />
-              </RequireAdmin>
-            }
-          />
-        </Routes>
+        <div className="page-turn-scene">
+          <div key={pathname} className="page-turn-page">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/menu" element={<Menu />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/order-confirmation" element={<OrderConfirmation />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/account" element={<Account />} />
+              <Route path="/admin-login" element={<AdminLogin />} />
+              <Route path="/dashain-offers" element={<DashainOffers />} />
+              <Route
+                path="/admin"
+                element={
+                  <RequireAdmin>
+                    <Admin />
+                  </RequireAdmin>
+                }
+              />
+            </Routes>
+          </div>
+        </div>
       </main>
       <Footer />
     </>
