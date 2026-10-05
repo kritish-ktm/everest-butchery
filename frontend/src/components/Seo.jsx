@@ -6,7 +6,7 @@ const defaultDescription = "Everest Butchery in Brønshøj, Copenhagen offers fr
 const pages = {
   "/": ["Everest Butchery | Fresh Halal Meat in Copenhagen", defaultDescription],
   "/menu": ["Fresh Meat Menu | Everest Butchery Copenhagen", "Browse fresh halal goat, buffalo, chicken and Nepali pantry products from Everest Butchery in Copenhagen. Order for pickup or delivery."],
-  "/about": ["About Everest Butchery | Nepali Butcher in Copenhagen", "Meet Everest Butchery, a family-run shop bringing fresh meat and Nepali flavours to Brønshøj and the Copenhagen community."],
+  "/about": ["About Everest Butchery | Halal-Certified Nepali Butcher in Copenhagen", "Meet Everest Butchery, a family-run Copenhagen butcher serving halal-certified meat and Nepali favourites with care."],
   "/contact": ["Contact & Opening Hours | Everest Butchery Copenhagen", "Visit Everest Butchery at Islevhusvej 9, 2700 København. Open every day 10:00-19:00. Call +45 71 33 83 50."],
   "/dashain-offers": ["Dashain Meat Offers | Everest Butchery Copenhagen", "Explore Dashain offers and reserve fresh meat from Everest Butchery in Copenhagen."],
   "/cart": ["Your Cart | Everest Butchery", "Review your Everest Butchery order."],
@@ -15,6 +15,9 @@ const pages = {
   "/account": ["Customer Account | Everest Butchery", "Sign in to your Everest Butchery customer account or create an account."],
   "/admin": ["Admin | Everest Butchery", ""],
   "/admin-login": ["Admin Login | Everest Butchery", ""],
+  "/privacy": ["Privacy Notice | Everest Butchery", "How Everest Butchery uses account, order and campaign information, and how to exercise your privacy rights."],
+  "/terms": ["Terms and Conditions | Everest Butchery", "Terms for placing pickup and local delivery order requests with Everest Butchery."],
+  "/gdpr": ["Your GDPR Rights | Everest Butchery", "Learn how to request access, correction, deletion or restriction of your personal data."],
 };
 const privatePaths = new Set(["/cart", "/checkout", "/order-confirmation", "/account", "/admin", "/admin-login"]);
 

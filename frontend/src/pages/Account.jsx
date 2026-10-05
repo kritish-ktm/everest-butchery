@@ -197,7 +197,7 @@ export default function Account() {
               <>
                 <div className="account-divider"><span>or</span></div>
                 <GoogleSignInButton onCredential={handleGoogleCredential} />
-                <p className="account-terms">By continuing, you agree to use your account for Everest Butchery services.</p>
+              <p className="account-terms">By creating an account, you agree to our <Link to="/terms">Terms</Link> and acknowledge our <Link to="/privacy">Privacy Notice</Link>.</p>
               </>
             )}
           </>

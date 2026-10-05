@@ -42,7 +42,7 @@ export default function AdminLogin() {
       <div className="form-card">
         <h2 style={{ fontSize: 22, marginBottom: 6 }}>{recovering ? "Reset Admin Password" : "Admin Login"}</h2>
         <p style={{ color: "#888", fontSize: 14, marginBottom: 22 }}>
-          {recovering ? "We’ll send a secure link to set a new password for your Supabase admin account." : "Staff access only."}
+          {recovering ? "We’ll send a secure link to set a new password for your  admin account." : "Staff access only."}
         </p>
 
         {error && <div className="error-box">{error}</div>}

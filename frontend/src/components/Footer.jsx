@@ -26,6 +26,12 @@ export default function Footer() {
           <a href="mailto:hello@everestbutchery.dk">hello@everestbutchery.dk</a>
           <Link to="/contact">Store addresses & hours</Link>
         </div>
+        <div className="footer-column">
+          <h4>Legal</h4>
+          <Link to="/privacy">Privacy Notice</Link>
+          <Link to="/terms">Terms and Conditions</Link>
+          <Link to="/gdpr">GDPR Rights</Link>
+        </div>
       </div>
       <div className="container footer-bottom">
         <span>© {new Date().getFullYear()} Everest Butchery. All rights reserved.</span>

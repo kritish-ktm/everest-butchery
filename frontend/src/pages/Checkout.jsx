@@ -43,6 +43,7 @@ export default function Checkout() {
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authSubmitting, setAuthSubmitting] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   useEffect(() => {
     if (!supabase) return undefined;
@@ -262,7 +263,15 @@ export default function Checkout() {
             <textarea rows={3} value={form.notes} onChange={(e) => update("notes", e.target.value)} placeholder="E.g. cut preference, preferred pickup time..." />
           </div>
 
-          <button className="btn btn-primary" style={{ width: "100%" }} disabled={submitting}>
+          <div className="checkout-legal-consent">
+            <input id="checkout-terms" type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} required />
+            <div>
+              <label htmlFor="checkout-terms">I have read and agree to the Terms and Conditions.</label>
+              <p><Link to="/terms">Terms and Conditions</Link> · <Link to="/privacy">Privacy Notice</Link></p>
+            </div>
+          </div>
+
+          <button className="btn btn-primary" style={{ width: "100%" }} disabled={submitting || !acceptedTerms}>
             {submitting ? "Placing order…" : `Place Order - ${total.toFixed(0)} kr`}
           </button>
         </form>

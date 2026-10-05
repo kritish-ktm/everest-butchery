@@ -15,6 +15,7 @@ import DashainOffers from "./pages/DashainOffers";
 import Seo from "./components/Seo";
 import Account from "./pages/Account";
 import PasswordRecoveryGate from "./components/PasswordRecoveryGate";
+import LegalPage from "./pages/LegalPages";
 
 // Not linked anywhere in the public nav - reachable only by typing the URL,
 // and the backend independently rejects any admin request without a valid
@@ -47,6 +48,9 @@ export default function App() {
               <Route path="/contact" element={<Contact />} />
               <Route path="/account" element={<Account />} />
               <Route path="/admin-login" element={<AdminLogin />} />
+              <Route path="/privacy" element={<LegalPage />} />
+              <Route path="/terms" element={<LegalPage />} />
+              <Route path="/gdpr" element={<LegalPage />} />
               <Route path="/dashain-offers" element={<DashainOffers />} />
               <Route
                 path="/admin"
