@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { adminAuth } from "../lib/adminAuth";
-import { supabase, usesSupabase } from "../lib/supabase";
+import { authRedirectOrigin, supabase, usesSupabase } from "../lib/supabase";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -21,7 +21,7 @@ export default function AdminLogin() {
     try {
       if (recovering) {
         const { error: recoveryError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-          redirectTo: `${window.location.origin}/admin-login`,
+          redirectTo: `${authRedirectOrigin}/admin-login`,
         });
         if (recoveryError) throw recoveryError;
         setMessage("If an account exists for that email, a password recovery link has been sent.");

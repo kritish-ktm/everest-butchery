@@ -102,6 +102,9 @@ declare
   quantity numeric(10,3);
   line_total numeric(10,2);
 begin
+  if auth.uid() is null then
+    raise exception 'Sign in is required to place an order';
+  end if;
   if coalesce(jsonb_typeof(payload -> 'items'), '') <> 'array' or coalesce(jsonb_array_length(payload -> 'items'), 0) = 0 then
     raise exception 'Order must include at least one item';
   end if;
@@ -149,8 +152,8 @@ begin
 end;
 $$;
 
-revoke all on function public.create_order(jsonb) from public;
-grant execute on function public.create_order(jsonb) to anon, authenticated;
+revoke all on function public.create_order(jsonb) from public, anon;
+grant execute on function public.create_order(jsonb) to authenticated;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('product-images', 'product-images', true, 5242880, array['image/jpeg','image/png','image/webp','image/gif'])

@@ -39,3 +39,5 @@ For local Supabase development, copy `frontend/.env.example` to `frontend/.env.l
 The old PHP/MySQL backend remains for XAMPP. Vercel hosts the frontend; Supabase provides its database, authentication, and image storage.
 
 Customer accounts use Supabase Auth. Add both the local and production `/account` URLs to Supabase Authentication's allowed redirect URLs. To enable Google login, configure Google under Supabase Authentication providers, set `VITE_GOOGLE_CLIENT_ID` in local and Vercel environments, and register the local and deployed site origins in Google OAuth. The Google OAuth client secret belongs only in Supabase, never in Vite environment variables.
+
+Checkout requires a Supabase-authenticated customer. If the schema was already installed before this requirement was added, run `supabase/require_authenticated_checkout.sql` once in the Supabase SQL Editor. Existing signed-in customers continue directly to checkout; other customers sign in first.

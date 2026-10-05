@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import GoogleSignInButton from "../components/GoogleSignInButton";
-import { supabase } from "../lib/supabase";
+import { authRedirectOrigin, supabase } from "../lib/supabase";
 
 export default function Account() {
   const navigate = useNavigate();
@@ -49,7 +49,7 @@ export default function Account() {
     try {
       if (mode === "recover") {
         const { error: authError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-          redirectTo: `${window.location.origin}/account`,
+          redirectTo: `${authRedirectOrigin}/account`,
         });
         if (authError) throw authError;
         setMessage("If an account exists for that email, a recovery link has been sent.");
@@ -59,7 +59,7 @@ export default function Account() {
           password,
           options: {
             data: { full_name: name.trim() },
-            emailRedirectTo: `${window.location.origin}/account`,
+            emailRedirectTo: `${authRedirectOrigin}/account`,
           },
         });
         if (authError) throw authError;
