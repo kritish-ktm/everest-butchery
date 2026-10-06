@@ -18,6 +18,14 @@ const iconNames = {
   trophy: "bi-trophy",
   info: "bi-info-circle",
   sparkles: "bi-stars",
+  flag: "bi-flag-fill",
+  crown: "bi-award-fill",
+  diamond: "bi-diamond-fill",
+  heart: "bi-heart-fill",
+  spade: "bi-suit-spade-fill",
+  club: "bi-suit-club-fill",
+  dice: "bi-dice-5-fill",
+  points: "bi-coin",
 };
 
 export default function Icon({ name, size = 28, className = "" }) {

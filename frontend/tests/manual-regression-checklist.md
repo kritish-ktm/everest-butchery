@@ -52,6 +52,7 @@ Use a local build or staging deployment with test data. Do not submit a real cus
 
 ## Dashain campaign and production check
 
-- [ ] Test booking, validation, score/leaderboard, and reset behavior only against test data; confirm what player name and optional phone are publicly displayed.
-- [ ] On the deployed site, inspect the game API request. Current source contains a `http://localhost/everest-butchery/backend/api/langur_burja.php` URL; replace/configure this backend before claiming the game works in production.
-- [ ] Check the campaign reset date and leaderboard-retention behavior against the published campaign terms and Privacy Notice.
+- [ ] Run `supabase/langur_burja.sql` in a test Supabase project and set a server-only `SUPABASE_SERVER_KEY` in Vercel Preview. Never set the secret as a `VITE_` variable.
+- [ ] Use `vercel dev` from `frontend/` for local end-to-end game API testing; plain Vite dev mode does not provide the `/api` function.
+- [ ] Test registration, duplicate registration, six-symbol selection, rolling animation, server result, score total, cooldown, leaderboard rank/highlighting, network error, and reset/closed states.
+- [ ] Confirm leaderboard responses show player names and points only, never player keys or phone numbers. Check the campaign reset date and retention wording against the Privacy Notice.

@@ -2,16 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../components/Icon";
 
-const GAME_API =
-  "http://localhost/everest-butchery/backend/api/langur_burja.php";
+const GAME_API = "/api/langur-burja";
 
 const symbols = [
-  { key: "jhanda", label: "Jhanda", icon: "⚑" },
-  { key: "burja", label: "Burja", icon: "♛" },
-  { key: "itta", label: "Itta", icon: "◇" },
-  { key: "pan", label: "Pan", icon: "♡" },
-  { key: "hukum", label: "Hukum", icon: "♠" },
-  { key: "chidi", label: "Chidi", icon: "♣" },
+  { key: "jhanda", label: "Jhanda", icon: "flag" },
+  { key: "burja", label: "Burja", icon: "crown" },
+  { key: "itta", label: "Itta", icon: "diamond" },
+  { key: "pan", label: "Pan", icon: "heart" },
+  { key: "hukum", label: "Hukum", icon: "spade" },
+  { key: "chidi", label: "Chidi", icon: "club" },
 ];
 
 const rewardTable = [0, 5, 10, 20, 35, 50, 100];
@@ -74,6 +73,7 @@ export default function DashainOffers() {
   const [selectedSymbol, setSelectedSymbol] = useState("jhanda");
   const [gameMessage, setGameMessage] = useState("");
   const [rollKey, setRollKey] = useState(0);
+  const [gameOpen, setGameOpen] = useState(true);
 
   const selectedSymbolData = useMemo(
     () => symbols.find((symbol) => symbol.key === selectedSymbol) || symbols[0],
@@ -92,12 +92,11 @@ export default function DashainOffers() {
 
         if (cancelled) return;
 
-        if (data.player) {
-          setPlayer(data.player);
-          saveStoredPlayer(data.player);
-        }
-
+        setPlayer(data.player || null);
+        if (data.player) saveStoredPlayer(data.player);
+        else localStorage.removeItem("everest-langur-burja-player");
         setLeaderboard(data.leaderboard || []);
+        setGameOpen(data.is_open !== false);
         setGameMessage(data.message || "");
       } catch {
         if (!cancelled) {
@@ -226,7 +225,7 @@ export default function DashainOffers() {
           overflow: hidden;
           margin-top: 24px;
           padding: 34px;
-          border-radius: 28px;
+          border-radius: 8px;
           border: 1px solid rgba(245, 166, 35, 0.28);
           background:
             radial-gradient(circle at 50% 0%, rgba(245,166,35,.13), transparent 35%),
@@ -237,23 +236,7 @@ export default function DashainOffers() {
 
         .langur-game::before,
         .langur-game::after {
-          content: "";
-          position: absolute;
-          width: 170px;
-          height: 170px;
-          border-radius: 50%;
-          border: 1px solid rgba(245,166,35,.12);
-          pointer-events: none;
-        }
-
-        .langur-game::before {
-          top: -95px;
-          right: -50px;
-        }
-
-        .langur-game::after {
-          bottom: -105px;
-          left: -55px;
+          display: none;
         }
 
         .langur-game-inner {
@@ -268,7 +251,7 @@ export default function DashainOffers() {
           color: #f5a623;
           font-size: 12px;
           font-weight: 800;
-          letter-spacing: .14em;
+          letter-spacing: 0;
           text-transform: uppercase;
         }
 
@@ -294,11 +277,8 @@ export default function DashainOffers() {
         }
 
         .langur-panel {
-          padding: 24px;
-          border-radius: 22px;
-          background: rgba(255,255,255,.045);
-          border: 1px solid rgba(255,255,255,.09);
-          backdrop-filter: blur(10px);
+          min-width: 0;
+          padding: 8px 0;
         }
 
         .points-bar {
@@ -317,7 +297,7 @@ export default function DashainOffers() {
           color: rgba(255,255,255,.62);
           font-size: 12px;
           text-transform: uppercase;
-          letter-spacing: .12em;
+          letter-spacing: 0;
           font-weight: 800;
         }
 
@@ -326,11 +306,17 @@ export default function DashainOffers() {
           font-size: 28px;
           font-weight: 900;
           white-space: nowrap;
+          animation: pointsArrive .38s ease both;
+        }
+
+        @keyframes pointsArrive {
+          from { opacity: .45; transform: translateY(5px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
         .symbol-grid {
           display: grid;
-          grid-template-columns: repeat(6, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 10px;
         }
 
@@ -350,6 +336,13 @@ export default function DashainOffers() {
           border-color: rgba(245,166,35,.45);
         }
 
+        .symbol-button:focus-visible,
+        .roll-button:focus-visible,
+        .register-button:focus-visible {
+          outline: 3px solid #fff;
+          outline-offset: 3px;
+        }
+
         .symbol-button.selected {
           border-color: #f5a623;
           background: linear-gradient(145deg, rgba(245,166,35,.19), rgba(213,41,76,.12));
@@ -357,19 +350,37 @@ export default function DashainOffers() {
         }
 
         .symbol-icon {
-          display: block;
-          font-family: Georgia, "Times New Roman", serif;
-          font-size: 38px;
+          display: grid;
+          place-items: center;
+          height: 42px;
           line-height: 1;
           margin-bottom: 10px;
           color: #f5a623;
+          transition: transform .2s ease;
+        }
+
+        .symbol-icon .icon {
+          font-size: 29px !important;
+        }
+
+        .symbol-button.selected .symbol-icon {
+          transform: translateY(-2px) scale(1.1);
+        }
+
+        .symbol-selected-mark {
+          display: block;
+          min-height: 14px;
+          margin-top: 5px;
+          color: #f5a623;
+          font-size: 10px;
+          font-weight: 800;
         }
 
         .symbol-name {
           display: block;
           font-size: 12px;
           font-weight: 800;
-          letter-spacing: .06em;
+          letter-spacing: 0;
           text-transform: uppercase;
         }
 
@@ -395,8 +406,18 @@ export default function DashainOffers() {
           animation: langurDie .42s ease both;
         }
 
+        .die.rolling {
+          animation: langurShake .34s ease-in-out infinite alternate;
+          border-color: rgba(245,166,35,.7);
+          background: linear-gradient(145deg, #fff8e8, #f4dfb4);
+        }
+
+        @keyframes langurShake {
+          from { transform: translateY(-3px) rotate(-9deg); }
+          to { transform: translateY(3px) rotate(9deg); }
+        }
+
         .die-symbol {
-          font-family: Georgia, "Times New Roman", serif;
           font-size: 39px;
           line-height: 1;
         }
@@ -406,7 +427,7 @@ export default function DashainOffers() {
           font-size: 9px;
           font-weight: 900;
           text-transform: uppercase;
-          letter-spacing: .06em;
+          letter-spacing: 0;
         }
 
         @keyframes langurDie {
@@ -423,7 +444,7 @@ export default function DashainOffers() {
           background: linear-gradient(90deg, #f5a623, #d5294c);
           color: #171717;
           font-weight: 900;
-          letter-spacing: .08em;
+          letter-spacing: 0;
           cursor: pointer;
           box-shadow: 0 14px 32px rgba(213,41,76,.2);
           transition: transform .18s ease, opacity .18s ease;
@@ -445,6 +466,12 @@ export default function DashainOffers() {
           border-radius: 16px;
           background: rgba(245,166,35,.08);
           border: 1px solid rgba(245,166,35,.2);
+          animation: resultArrive .36s ease both;
+        }
+
+        @keyframes resultArrive {
+          from { opacity: 0; transform: translateY(8px) scale(.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .result-earned {
@@ -511,10 +538,8 @@ export default function DashainOffers() {
 
         .register-box {
           margin-top: 20px;
-          padding: 18px;
-          border-radius: 17px;
-          background: rgba(255,255,255,.04);
-          border: 1px solid rgba(255,255,255,.08);
+          padding: 18px 0 0;
+          border-top: 1px solid rgba(255,255,255,.12);
         }
 
         .register-box h3 {
@@ -601,6 +626,19 @@ export default function DashainOffers() {
           font-size: 12px;
         }
 
+        .points-label .icon,
+        .roll-button .icon,
+        .leaderboard-title .icon { margin-right: 7px; vertical-align: -2px; }
+
+        .leaderboard-rank.top-rank { color: #f5a623; }
+        .leaderboard-row.me { animation: resultArrive .35s ease both; }
+        .game-message[role="status"] { min-height: 44px; }
+
+        @media (prefers-reduced-motion: reduce) {
+          .die, .die.rolling, .result-box, .leaderboard-row.me, .points-value { animation: none; }
+          .symbol-button, .symbol-icon { transition: none; }
+        }
+
         @media (max-width: 900px) {
           .langur-layout {
             grid-template-columns: 1fr;
@@ -614,11 +652,7 @@ export default function DashainOffers() {
         @media (max-width: 600px) {
           .langur-game {
             padding: 20px;
-            border-radius: 21px;
-          }
-
-          .langur-panel {
-            padding: 17px;
+            border-radius: 8px;
           }
 
           .symbol-button {
@@ -653,8 +687,7 @@ export default function DashainOffers() {
           </span>
           <h1>Dashain Offers</h1>
           <p>
-            Celebrate Dashain with special offers, surprises and a chance to
-            win.
+            Celebrate Dashain with festive offers, special cuts and a friendly points challenge.
           </p>
         </div>
       </section>
@@ -840,32 +873,39 @@ export default function DashainOffers() {
           <div className="langur-game">
             <div className="langur-game-inner">
               <div className="langur-kicker">
-                <Icon name="gift" size={15} /> DASHAIN POINTS CHALLENGE
+                <Icon name="sparkles" size={15} /> DASHAIN POINTS CHALLENGE
               </div>
 
               <h2 className="langur-title">Langur Burja</h2>
 
               <p className="langur-subtitle">
-                Pick a traditional symbol, roll six dice and collect Masu
-                Points for matching symbols. Everyone starts equally with
-                <strong> 100 Masu Points</strong>.
+                Choose a traditional symbol and roll six animated dice. Matching symbols add Masu Points to your score. Every player starts with <strong>100 points</strong>.
+              </p>
+              <p className="game-note game-disclosure">
+                <Icon name="info" size={14} /> Free, non-wagering challenge: no purchase or payment is needed. Points have no cash value. The name you enter appears on the public leaderboard.
               </p>
 
               <div className="langur-layout">
                 <div className="langur-panel">
                   <div className="points-bar">
                     <div>
-                      <div className="points-label">Your balance</div>
+                      <div className="points-label"><Icon name="points" size={13} /> {player ? "Your points" : "Starting points"}</div>
                       <div style={{ color: "rgba(255,255,255,.72)", fontSize: 12 }}>
                         Dashain Masu Points
                       </div>
                     </div>
                     <div className="points-value">
-                      {loadingGame ? "…" : Number(player?.points || 0)}
+                      {loadingGame ? "…" : !gameOpen || (gameMessage && !player) ? "—" : Number(player?.points ?? 100)}
                     </div>
                   </div>
 
-                  {!player ? (
+                  {!gameOpen ? (
+                    <div className="register-box game-closed" role="status">
+                      <Icon name="check" size={23} />
+                      <h3>Thanks for celebrating with us</h3>
+                      <p>This Dashain points challenge has ended. The leaderboard has been cleared for the next campaign.</p>
+                    </div>
+                  ) : !player ? (
                     <form onSubmit={registerPlayer}>
                       <div className="register-box" style={{ marginTop: 0 }}>
                         <h3>Join the leaderboard</h3>
@@ -904,7 +944,7 @@ export default function DashainOffers() {
                           type="submit"
                           disabled={registering}
                         >
-                          {registering ? "JOINING..." : "START WITH 100 POINTS"}
+                          {registering ? "Joining…" : <><Icon name="sparkles" size={17} /> Start with 100 points</>}
                         </button>
                       </div>
                     </form>
@@ -914,7 +954,7 @@ export default function DashainOffers() {
                         Choose your symbol:
                       </div>
 
-                      <div className="symbol-grid">
+                      <div className="symbol-grid" role="group" aria-label="Choose a Langur Burja symbol">
                         {symbols.map((symbol) => (
                           <button
                             key={symbol.key}
@@ -925,13 +965,19 @@ export default function DashainOffers() {
                             onClick={() => setSelectedSymbol(symbol.key)}
                             aria-pressed={selectedSymbol === symbol.key}
                           >
-                            <span className="symbol-icon">{symbol.icon}</span>
+                            <span className="symbol-icon"><Icon name={symbol.icon} /></span>
                             <span className="symbol-name">{symbol.label}</span>
+                            <span className="symbol-selected-mark">{selectedSymbol === symbol.key ? "Selected" : ""}</span>
                           </button>
                         ))}
                       </div>
 
                       <div className="dice-row" aria-live="polite">
+                        {rolling && Array.from({ length: 6 }, (_, index) => (
+                          <div className="die rolling" key={`rolling-${index}`} aria-label={`Die ${index + 1} rolling`}>
+                            <Icon name="dice" size={30} />
+                          </div>
+                        ))}
                         {dice.map((value, index) => {
                           const symbol = symbolForRoll(value);
                           return (
@@ -941,7 +987,7 @@ export default function DashainOffers() {
                               style={{ animationDelay: `${index * 55}ms` }}
                             >
                               <div>
-                                <div className="die-symbol">{symbol.icon}</div>
+                                <div className="die-symbol"><Icon name={symbol.icon} /></div>
                                 <div className="die-name">{symbol.label}</div>
                               </div>
                             </div>
@@ -960,7 +1006,7 @@ export default function DashainOffers() {
                             textAlign: "center",
                           }}
                         >
-                          Your six dice will appear here.
+                          {rolling ? "Rolling your six dice…" : "Choose a symbol, then roll to reveal all six dice."}
                         </div>
                       )}
 
@@ -970,9 +1016,7 @@ export default function DashainOffers() {
                         onClick={rollDice}
                         disabled={rolling || loadingGame}
                       >
-                        {rolling
-                          ? "ROLLING THE DICE..."
-                          : `ROLL ${selectedSymbolData.label.toUpperCase()}`}
+                        {rolling ? "Rolling…" : <><Icon name="dice" size={18} /> Roll for {selectedSymbolData.label}</>}
                       </button>
 
                       {earned !== null && (
@@ -995,21 +1039,16 @@ export default function DashainOffers() {
                         ))}
                       </div>
 
-                      <p className="game-note">
-                        Masu Points are loyalty/engagement points only. They
-                        have no cash value and cannot be exchanged for money.
-                        The Dashain campaign resets after the festival.
-                      </p>
                     </>
                   )}
 
                   {gameMessage && (
-                    <div className="game-message">{gameMessage}</div>
+                    <div className="game-message" role="status" aria-live="polite">{gameMessage}</div>
                   )}
                 </div>
 
                 <aside className="langur-panel">
-                  <h3 className="leaderboard-title">🏆 Dashain Leaderboard</h3>
+                  <h3 className="leaderboard-title"><Icon name="trophy" size={19} /> Dashain Leaderboard</h3>
 
                   {leaderboard.length > 0 ? (
                     <ol className="leaderboard-list">
@@ -1017,19 +1056,19 @@ export default function DashainOffers() {
                         <li
                           key={entry.player_key || `${entry.full_name}-${index}`}
                           className={`leaderboard-row ${
-                            player && entry.player_key === player.player_key
+                            player && entry.is_me
                               ? "me"
                               : ""
                           }`}
                         >
-                          <span className="leaderboard-rank">
+                          <span className={`leaderboard-rank${index < 3 ? " top-rank" : ""}`}>
                             #{index + 1}
                           </span>
                           <span className="leaderboard-name">
                             {entry.full_name}
                           </span>
                           <span className="leaderboard-points">
-                            {Number(entry.points || 0)}
+                            {Number(entry.points || 0)} <small>pts</small>
                           </span>
                         </li>
                       ))}
@@ -1058,9 +1097,9 @@ export default function DashainOffers() {
                           fontSize: 12,
                         }}
                       >
-                        <span>Best single-round reward</span>
+                        <span>Best round</span>
                         <strong style={{ color: "#f5a623" }}>
-                          +{Number(player.best_win || 0)}
+                          +{Number(player.best_win || 0)} pts
                         </strong>
                       </div>
                     </div>
