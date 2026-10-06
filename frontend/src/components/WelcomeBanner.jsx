@@ -5,18 +5,15 @@ import { Link } from "react-router-dom";
 export default function WelcomeBanner() {
   return (
     <section className="welcome-banner">
-
-      {/* Shop illustration */}
+      <div className="welcome-scene">
       <img
         src={shopFront}
         alt="Everest Butchery storefront"
         className="welcome-bg"
+        width="1092"
+        height="648"
+        fetchPriority="high"
       />
-
-      {/* Dark/mirrored glass effect */}
-      <div className="glass-overlay"></div>
-
-      {/* Text placed ON the shop window */}
       <div className="shop-window-text">
 
         <span className="welcome-eyebrow">
@@ -33,11 +30,11 @@ export default function WelcomeBanner() {
           तपाईंको भान्साको लागि, ताजा मासु
         </p>
 
-        <div className="welcome-line"></div>
         <Link to="/menu" className="btn btn-primary welcome-shop-link">Shop the Menu <i className="bi bi-arrow-right" aria-hidden="true" /></Link>
 
       </div>
-
+      <a className="storefront-expand" href={shopFront} target="_blank" rel="noopener noreferrer" aria-label="View the full storefront photo" title="View the full storefront photo"><i className="bi bi-arrows-fullscreen" aria-hidden="true" /></a>
+      </div>
     </section>
   );
 }
