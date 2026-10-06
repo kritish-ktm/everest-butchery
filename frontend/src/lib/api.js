@@ -118,23 +118,65 @@ function productPayload(values) {
 async function dashboardData(query) {
   const from = query.get("from") || new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
   const to = query.get("to") || new Date().toISOString().slice(0, 10);
-  const { data, error } = await supabase.from("orders").select("id,total,created_at,order_items(quantity)").neq("status", "cancelled").gte("created_at", `${from}T00:00:00`).lte("created_at", `${to}T23:59:59.999`);
+  const { data, error } = await supabase.from("orders").select("id,total,created_at,status,source,fulfillment,payment_method,customers(id,full_name,phone),order_items(quantity,product_name,line_total)").neq("status", "cancelled").gte("created_at", `${from}T00:00:00`).lte("created_at", `${to}T23:59:59.999`);
   const rows = unwrap({ data, error });
   const days = new Map();
+  const topCustomers = new Map();
+  const topProducts = new Map();
+  const fulfillment = {};
+  const payment = {};
+  const status = {};
+  const source = {};
+
   for (const order of rows) {
     const date = order.created_at.slice(0, 10);
     const row = days.get(date) || { date, label: new Date(`${date}T12:00:00`).toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" }), orders: 0, sales: 0 };
     row.orders += 1;
     row.sales += Number(order.total);
     days.set(date, row);
+
+    fulfillment[order.fulfillment || "unknown"] = (fulfillment[order.fulfillment || "unknown"] || 0) + 1;
+    payment[order.payment_method || "unknown"] = (payment[order.payment_method || "unknown"] || 0) + 1;
+    status[order.status || "unknown"] = (status[order.status || "unknown"] || 0) + 1;
+    source[order.source || "online"] = (source[order.source || "online"] || 0) + 1;
+
+    const customer = order.customers;
+    if (customer?.id) {
+      const existing = topCustomers.get(customer.id) || { id: customer.id, full_name: customer.full_name, phone: customer.phone, orders: 0, sales: 0 };
+      existing.orders += 1;
+      existing.sales += Number(order.total);
+      topCustomers.set(customer.id, existing);
+    }
+
+    for (const item of order.order_items || []) {
+      const name = item.product_name || "Unknown item";
+      const existing = topProducts.get(name) || { product_name: name, quantity: 0, sales: 0 };
+      existing.quantity += Number(item.quantity || 0);
+      existing.sales += Number(item.line_total || 0);
+      topProducts.set(name, existing);
+    }
   }
+
   const series = [];
   for (let day = new Date(`${from}T12:00:00`); day <= new Date(`${to}T12:00:00`); day.setDate(day.getDate() + 1)) {
     const date = day.toISOString().slice(0, 10);
     series.push(days.get(date) || { date, label: day.toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" }), orders: 0, sales: 0 });
   }
   const sales = rows.reduce((sum, row) => sum + Number(row.total), 0);
-  return { range: { from, to }, summary: { orders: rows.length, sales, average_order: rows.length ? sales / rows.length : 0, items_sold: rows.reduce((sum, row) => sum + row.order_items.reduce((n, item) => n + Number(item.quantity), 0), 0) }, series };
+  const list = (value) => Object.entries(value).map(([key, count]) => ({ key, count }));
+  return {
+    range: { from, to },
+    summary: { orders: rows.length, sales, average_order: rows.length ? sales / rows.length : 0, items_sold: rows.reduce((sum, row) => sum + row.order_items.reduce((n, item) => n + Number(item.quantity), 0), 0) },
+    series,
+    reports: {
+      top_customers: [...topCustomers.values()].sort((a, b) => b.sales - a.sales || b.orders - a.orders).slice(0, 6),
+      top_products: [...topProducts.values()].sort((a, b) => b.sales - a.sales || b.quantity - a.quantity).slice(0, 6),
+      fulfillment: list(fulfillment),
+      payment_methods: list(payment),
+      statuses: list(status),
+      sources: list(source),
+    },
+  };
 }
 
 async function request(path, options = {}, { auth = false } = {}) {

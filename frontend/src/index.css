@@ -1778,6 +1778,74 @@ h4 {
   font-size: 10px;
 }
 
+.dashboard-ops-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.ops-card {
+  min-height: 138px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #faf9f7;
+}
+
+.ops-card strong,
+.ops-card small {
+  display: block;
+}
+
+.ops-card strong {
+  margin-top: 8px;
+  font-family: var(--font-head);
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.ops-card small {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.nepali-range {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 18px;
+  color: var(--red-dark);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.weather-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.weather-details {
+  display: grid;
+  min-width: 170px;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.weather-details span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.weather-details .bi {
+  color: var(--red);
+}
+
 .sales-chart-card {
   margin-top: 18px;
   padding: 22px 20px 18px;
@@ -1846,6 +1914,7 @@ h4 {
 }
 
 .sales-bar-group > span,
+.sales-bar-group > em,
 .sales-bar-group > small {
   overflow: hidden;
   width: 100%;
@@ -1856,9 +1925,98 @@ h4 {
   white-space: nowrap;
 }
 
+.sales-bar-group > em {
+  margin-top: 2px;
+  color: var(--red-dark);
+  font-style: normal;
+}
+
 .sales-bar-group > small {
   margin-top: 3px;
   color: #9b9690;
+}
+
+.reports-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.report-card {
+  min-height: 260px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--white);
+}
+
+.report-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.report-card-head h4 {
+  font-size: 16px;
+}
+
+.report-card-head .bi {
+  color: var(--red);
+  font-size: 19px;
+}
+
+.report-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.report-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.report-list li:last-child {
+  border-bottom: 0;
+}
+
+.report-list span,
+.report-list strong,
+.report-list small {
+  display: block;
+  min-width: 0;
+}
+
+.report-list span:last-child {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.report-list strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-list small,
+.report-empty {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.report-empty {
+  margin: 28px 0 0;
 }
 
 .dashboard-loading,
@@ -1884,6 +2042,11 @@ h4 {
 @media (max-width: 900px) {
   .dashboard-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-ops-grid,
+  .reports-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1911,6 +2074,14 @@ h4 {
 
   .dashboard-custom-range .btn {
     width: 100%;
+  }
+
+  .weather-card {
+    display: block;
+  }
+
+  .weather-details {
+    margin-top: 16px;
   }
 
   .google-signin-card {
