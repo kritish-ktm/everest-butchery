@@ -46,6 +46,12 @@ Customer accounts use Supabase Auth. Add both the local and production `/account
 
 Checkout requires a Supabase-authenticated customer. If the schema was already installed before this requirement was added, run `supabase/require_authenticated_checkout.sql` once in the Supabase SQL Editor. Existing signed-in customers continue directly to checkout; other customers sign in first.
 
+## Cookie And Storage Choices
+
+The customer notice provides equal Accept optional and Reject optional controls, with Cookie settings in the footer to change the choice. The only new optional storage remembers the menu sort order; it is neither read nor written before acceptance. Rejection removes that preference without removing login or basket data. The consent record lasts up to 180 days and is versioned; new tracking purposes must require fresh consent rather than reusing this preference consent. Browser-storage blocking leaves the notice usable for the current visit.
+
+This does not migrate Supabase browser authentication to server-issued session cookies and does not add analytics or advertising. HttpOnly session cookies would require a separate server-auth architecture change. Review external sign-in, font, and icon providers and the legal notice before claiming comprehensive cookie compliance.
+
 ## Customer Weather And Time
 
 Customer pages show the Copenhagen date and clock, plus store-area readings from OpenWeather. Admin weather uses the same endpoint. Readings are cached for 15 minutes and include their observation timestamp; they are regional weather data, not a sensor reading inside the store.
@@ -53,6 +59,14 @@ Customer pages show the Copenhagen date and clock, plus store-area readings from
 Set `OPENWEATHER_API_KEY` as a server-only Secret in Vercel Project Settings > Environment Variables for Production (and Preview if needed), then redeploy. Do not use a `VITE_` prefix. For local development, put the key in the gitignored `frontend/.env.local`; the Vite server includes a local `/api/weather` handler. Missing or inactive keys display "Weather unavailable" rather than sample readings. Rotate any key shared in chat.
 
 Run weather/time regression tests with `node --test tests/weather.test.js` from `frontend`.
+
+## Storefront Verification
+
+Run `npm test`, `npm run lint`, `npm run build`, and `npm run check:build` from `frontend`. GitHub Actions runs these checks on pushes and pull requests. The build budget checks initial JavaScript and the responsive storefront WebP sizes; it is not a substitute for measuring real Core Web Vitals.
+
+Secondary pages, including admin code and styles, load on demand. The storefront photo uses responsive WebP with the original JPEG as a fallback. Checkout blocks repeat submissions while pending, retains the cart on errors, and keeps a minimal confirmation reference and total in session storage for up to 24 hours. It does not persist customer contact details in the receipt. Server-side idempotency is still needed to deduplicate retries after a lost successful response.
+
+For browser checks without real orders, open `http://127.0.0.1:5173/tests/checkout-preview.html` during local development. This dev-only fixture uses mock authentication and a mock order API, supports simulated stock errors, and is not bundled into the production app. Never use it as proof that production authentication or database writes work.
 
 ## Inventory Management
 

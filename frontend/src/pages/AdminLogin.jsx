@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { adminAuth } from "../lib/adminAuth";
 import { authRedirectOrigin, supabase, usesSupabase } from "../lib/supabase";
+import "../admin.css";
 
 export default function AdminLogin() {
   const navigate = useNavigate();

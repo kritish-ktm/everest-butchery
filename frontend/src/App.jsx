@@ -2,22 +2,33 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Header from "./components/Header";
 import StoreConditions from "./components/StoreConditions";
 import Footer from "./components/Footer";
+import CookiePreferences from "./components/CookiePreferences";
 import Home from "./pages/Home";
-import Menu from "./pages/Menu";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
-import OrderConfirmation from "./pages/OrderConfirmation";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import AdminLogin from "./pages/AdminLogin";
-import Admin from "./pages/Admin";
 import { adminAuth } from "./lib/adminAuth";
-import DashainOffers from "./pages/DashainOffers";
 import Seo from "./components/Seo";
-import Account from "./pages/Account";
 import PasswordRecoveryGate from "./components/PasswordRecoveryGate";
-import LegalPage from "./pages/LegalPages";
-import { useEffect } from "react";
+import { Component, lazy, Suspense, useEffect } from "react";
+
+const Menu = lazy(() => import("./pages/Menu"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const Admin = lazy(() => import("./pages/Admin"));
+const DashainOffers = lazy(() => import("./pages/DashainOffers"));
+const Account = lazy(() => import("./pages/Account"));
+const LegalPage = lazy(() => import("./pages/LegalPages"));
+
+class RouteErrorBoundary extends Component {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() {
+    if (this.state.failed) return <section className="section container route-loading" role="alert"><h2>This page could not be loaded.</h2><button className="btn btn-primary" onClick={() => window.location.reload()}>Reload page</button></section>;
+    return this.props.children;
+  }
+}
 
 // Not linked anywhere in the public nav - reachable only by typing the URL,
 // and the backend independently rejects any admin request without a valid
@@ -40,9 +51,12 @@ export default function App() {
       <a href="#main-content" className="skip-link">Skip to content</a>
       {pathname !== "/admin" && <Header />}
       <main id="main-content" className={pathname === "/admin" ? "admin-root" : ""} tabIndex={-1}>
+        {pathname !== "/admin" && <CookiePreferences />}
         {pathname !== "/admin" && pathname !== "/admin-login" && <StoreConditions />}
         <div className="page-turn-scene">
           <div key={pathname} className="page-turn-page">
+            <RouteErrorBoundary>
+            <Suspense fallback={<div className="section container route-loading" role="status">Loading...</div>}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/menu" element={<Menu />} />
@@ -66,6 +80,8 @@ export default function App() {
                 }
               />
             </Routes>
+            </Suspense>
+            </RouteErrorBoundary>
           </div>
         </div>
       </main>

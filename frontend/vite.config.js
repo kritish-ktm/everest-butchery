@@ -4,6 +4,7 @@ import { createWeatherService } from './server/weather.js'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
+  build: { manifest: true },
   plugins: [react(), {
     name: 'local-weather-api',
     configureServer(server) {

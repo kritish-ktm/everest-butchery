@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { api } from "../lib/api";
@@ -6,6 +6,7 @@ import GoogleSignInButton from "../components/GoogleSignInButton";
 import { supabase } from "../lib/supabase";
 import { formatPrice } from "../lib/shopPresentation";
 import { customerProfile } from "../lib/customerProfile";
+import { saveOrderReceipt, validateCheckout } from "../lib/checkout";
 
 const DELIVERY_FEE = 39;
 
@@ -18,12 +19,17 @@ function savedBooking() {
   }
 }
 
+function savedCampaign() {
+  try { return sessionStorage.getItem("everest-order-campaign") || ""; }
+  catch { return ""; }
+}
+
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart();
   const navigate = useNavigate();
   const { search } = useLocation();
   const campaign = new URLSearchParams(search).get("campaign")
-    || sessionStorage.getItem("everest-order-campaign")
+    || savedCampaign()
     || "";
   const [fulfillment, setFulfillment] = useState(() => savedBooking().fulfillment || "pickup");
   const [paymentMethod, setPaymentMethod] = useState("cash");
@@ -46,13 +52,19 @@ export default function Checkout() {
   const [authPassword, setAuthPassword] = useState("");
   const [authSubmitting, setAuthSubmitting] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const submissionLock = useRef(false);
 
   useEffect(() => {
     if (!supabase) return undefined;
     let active = true;
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data, error: sessionError }) => {
       if (!active) return;
       setAuthUser(data.session?.user || null);
+      if (sessionError) setError("Your session could not be loaded. Please sign in again.");
+      setAuthReady(true);
+    }).catch(() => {
+      if (!active) return;
+      setError("Your session could not be loaded. Please sign in again.");
       setAuthReady(true);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -121,16 +133,12 @@ export default function Checkout() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (submissionLock.current) return;
     setError("");
-    if (!form.full_name || !form.phone) {
-      setError("Please provide your name and phone number.");
-      return;
-    }
-    if (fulfillment === "delivery" && !form.address) {
-      setError("Please provide a delivery address.");
-      return;
-    }
-
+    if (!authUser) { setError("Please sign in before placing your order."); return; }
+    const validationError = validateCheckout({ customer: form, items, fulfillment, paymentMethod, acceptedTerms });
+    if (validationError) { setError(validationError); return; }
+    submissionLock.current = true;
     setSubmitting(true);
     try {
       const res = await api.createOrder({
@@ -139,17 +147,21 @@ export default function Checkout() {
         fulfillment,
         payment_method: paymentMethod,
         requested_time: form.requested_time ? form.requested_time.replace("T", " ") : undefined,
-        customer: form,
+        customer: Object.fromEntries(Object.entries(form).map(([key, value]) => [key, typeof value === "string" ? value.trim() : value])),
         items: items.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
         notes: form.notes,
       });
+      saveOrderReceipt(res);
       clearCart();
-      if (campaign) sessionStorage.removeItem("everest-order-campaign");
-      sessionStorage.removeItem("everest-dashain-booking");
-      navigate("/order-confirmation", { state: { order: res } });
+      try {
+        if (campaign) sessionStorage.removeItem("everest-order-campaign");
+        sessionStorage.removeItem("everest-dashain-booking");
+      } catch { /* Storage cleanup must not hide an accepted order. */ }
+      navigate("/order-confirmation", { state: { order: res }, replace: true });
     } catch (err) {
       setError(err.message || "Something went wrong placing your order.");
     } finally {
+      submissionLock.current = false;
       setSubmitting(false);
     }
   }
@@ -196,7 +208,8 @@ export default function Checkout() {
         </section>
       ) : (
       <div className="checkout-grid">
-        <form className="form-card" onSubmit={handleSubmit}>
+        <form className="form-card" onSubmit={handleSubmit} aria-busy={submitting}>
+          <fieldset disabled={submitting}>
           <div className="checkout-mode">
             <i className={`bi ${campaign === "dashain" ? "bi-stars" : "bi-person-check"}`} aria-hidden="true" />
             <div>
@@ -275,6 +288,8 @@ export default function Checkout() {
           <button className="btn btn-primary" style={{ width: "100%" }} disabled={submitting || !acceptedTerms}>
             {submitting ? "Placing order…" : `Place Order - ${formatPrice(total)}`}
           </button>
+          </fieldset>
+          <span className="sr-only" role="status">{submitting ? "Placing your order. Please wait." : ""}</span>
         </form>
 
         <div className="cart-summary">

@@ -139,6 +139,9 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid var(--red); ou
 .dashain-basket-summary h3 { font-size: 18px; margin-bottom: 20px; }
 .dashain-selection-prompt { margin: 28px 0; color: var(--muted); }
 .store-conditions { background: #f2f5f4; color: #34423e; border-bottom: 1px solid #d9e1dd; font-size: 12px; }
+.checkout-page fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.checkout-page fieldset:disabled { opacity: .75; }
+.route-loading { min-height: 40vh; }
 .store-conditions-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px 24px; min-height: 42px; padding-block: 10px; flex-wrap: wrap; }
 .store-clock, .store-weather { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .store-clock time { font-variant-numeric: tabular-nums; }

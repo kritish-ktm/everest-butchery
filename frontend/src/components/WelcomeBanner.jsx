@@ -1,4 +1,6 @@
 import shopFront from "../assets/shop front.jpg";
+import shopFrontSmall from "../assets/storefront-640.webp";
+import shopFrontWebp from "../assets/storefront-1092.webp";
 import "/src/WelcomeBanner.css";
 import { Link } from "react-router-dom";
 
@@ -6,6 +8,8 @@ export default function WelcomeBanner() {
   return (
     <section className="welcome-banner">
       <div className="welcome-scene">
+      <picture>
+      <source type="image/webp" srcSet={`${shopFrontSmall} 640w, ${shopFrontWebp} 1092w`} sizes="100vw" />
       <img
         src={shopFront}
         alt="Everest Butchery storefront"
@@ -14,6 +18,7 @@ export default function WelcomeBanner() {
         height="648"
         fetchPriority="high"
       />
+      </picture>
       <div className="shop-window-text">
 
         <span className="welcome-eyebrow">

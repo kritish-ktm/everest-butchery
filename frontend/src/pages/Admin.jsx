@@ -12,6 +12,7 @@ import { formatPrice } from "../lib/shopPresentation";
 import { withMinimumDuration } from "../lib/adminOperations";
 import PendingLabel from "../components/PendingLabel";
 import { storeDate } from "../lib/storeTime";
+import "../admin.css";
 
 const emptyProduct = {
   id: null,

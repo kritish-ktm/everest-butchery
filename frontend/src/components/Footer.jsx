@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
+import { useCookiePreferences } from "../context/useCookiePreferences";
 
 export default function Footer() {
+  const { openSettings } = useCookiePreferences();
   return (
     <footer className="site-footer">
       <div className="container footer-grid">
@@ -31,6 +33,7 @@ export default function Footer() {
           <Link to="/privacy">Privacy Notice</Link>
           <Link to="/terms">Terms and Conditions</Link>
           <Link to="/gdpr">GDPR Rights</Link>
+          <button className="footer-cookie-settings" type="button" onClick={openSettings}>Cookie settings</button>
         </div>
       </div>
       <div className="container footer-bottom">

@@ -3,14 +3,17 @@ import { useShopData } from "../lib/useShopData";
 import ProductCard from "../components/ProductCard";
 import { useCart } from "../context/CartContext";
 import { filterProducts, formatPrice } from "../lib/shopPresentation";
+import { useCookiePreferences } from "../context/useCookiePreferences";
+import { readMenuSort, saveMenuSort } from "../lib/cookiePreferences";
 
 export default function Menu() {
   const { categories, products, loading, usingSample } = useShopData();
   const [params, setParams] = useSearchParams();
   const { count, subtotal } = useCart();
+  const { choice } = useCookiePreferences();
   const activeCat = params.get("category") || "all";
   const query = params.get("q") || "";
-  const sort = params.get("sort") || "featured";
+  const sort = params.get("sort") || readMenuSort(choice) || "featured";
   const featured = params.get("featured") === "1";
   const campaign = params.get("campaign")
     || sessionStorage.getItem("everest-order-campaign")
@@ -18,6 +21,7 @@ export default function Menu() {
 
   const filtered = filterProducts(products, { category: activeCat, query, sort, featured });
   function changeFilter(key, value) {
+    if (key === "sort") saveMenuSort(value, choice);
     setParams((current) => {
       const next = new URLSearchParams(current);
       if (!value || value === "all" || (key === "sort" && value === "featured")) next.delete(key);
@@ -26,6 +30,7 @@ export default function Menu() {
     }, { replace: true });
   }
   function resetFilters() {
+    saveMenuSort("featured", choice);
     setParams((current) => {
       const next = new URLSearchParams(current);
       ["category", "q", "sort", "featured"].forEach((key) => next.delete(key));

@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, useState, useEffect } from "react";
 import { validQuantity } from "../lib/shopPresentation";
+import { cartSubtotal } from "../lib/checkout";
 
 const CartContext = createContext(null);
 const STORAGE_KEY = "eb_cart";
@@ -60,7 +61,7 @@ export function CartProvider({ children }) {
   }
 
   const subtotal = useMemo(
-    () => items.reduce((sum, i) => sum + i.quantity * i.price_per_unit, 0),
+    () => cartSubtotal(items),
     [items]
   );
 

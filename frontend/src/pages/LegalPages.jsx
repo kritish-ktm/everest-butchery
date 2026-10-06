@@ -43,7 +43,9 @@ const legalPages = {
         title: "Browser storage and cookies",
         paragraphs: [
           "The site currently uses browser storage needed for its features: session storage for the cart and campaign booking details, and local storage for authentication session data and the campaign game identity. These are not used by this site for advertising or cross-site analytics. Google Sign-In and other third-party services may use their own technologies when you choose to use them.",
-          "If we add non-essential analytics or advertising technologies, we will update this notice and request consent where required before they are used.",
+          "You can accept or reject optional preference storage through the Cookies & browser storage notice, and change your choice at any time using Cookie settings in the footer. Rejection does not disable the basket, sign-in or checkout. No advertising or analytics tracker is enabled by this choice. Any future tracking purpose will require a separate review and, where required, fresh consent.",
+          "Everest Butchery stores the choice in local storage under eb_storage_choice_v1 for up to 180 days. Only after acceptance, eb_menu_sort_v1 stores the selected menu sort order on this device for the same period. Rejecting optional storage deletes that saved sort order. These values are not sent to an analytics provider. If browser storage is blocked, the choice applies only to the current visit.",
+          "The cart and booking details use session storage for the browser session. A minimal order reference and total may also be kept in session storage for up to 24 hours. Authentication is currently handled by Supabase browser sessions, not by a new server-issued HttpOnly session cookie. Third-party sign-in, fonts and icon resources are separate service integrations; this preference choice is not a blanket consent to third-party tracking.",
         ],
       },
       {
@@ -166,7 +168,7 @@ export default function LegalPage() {
         <span className="page-kicker">{page.kicker}</span>
         <h1>{page.title}</h1>
         <p>{page.intro}</p>
-        <small>Last updated: 5 October 2026</small>
+        <small>Last updated: 7 October 2026</small>
       </header>
       <div className="legal-content">
         {page.sections.map((section) => (
