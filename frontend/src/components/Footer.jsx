@@ -36,6 +36,7 @@ export default function Footer() {
       <div className="container footer-bottom">
         <span>© {new Date().getFullYear()} Everest Butchery. All rights reserved.</span>
         <span>Freshly prepared in Denmark.</span>
+        <span>Made by Kritish Bhattarai</span>
       </div>
     </footer>
   );

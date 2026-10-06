@@ -1,4 +1,20 @@
 #root main.admin-root { padding-top: 0; background: #f5f7f8; }
+.admin-welcome { min-height: 100svh; padding: 32px; background: #f5f7f8; }
+.admin-welcome > img { width: 190px; height: 62px; object-fit: contain; background: #151515; padding: 10px; border-radius: 6px; }
+.admin-welcome-content { max-width: 650px; margin: 100px auto 0; }
+.admin-welcome-content > .bi { color: #107358; font-size: 36px; }
+.admin-welcome h1 { font-size: 36px; text-transform: none; letter-spacing: 0; margin: 20px 0 12px; overflow-wrap: anywhere; }
+.admin-welcome p { color: #53645c; margin: 16px 0; }
+.admin-welcome .btn { margin-top: 20px; letter-spacing: 0; text-transform: none; background: #107358; }
+.admin-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: admin-spin 750ms linear infinite; flex-shrink: 0; vertical-align: middle; }
+@keyframes admin-spin { to { transform: rotate(360deg); } }
+.admin-operation-feedback { position: fixed; right: 24px; bottom: 24px; z-index: 100; display: flex; align-items: center; gap: 10px; padding: 16px 20px; background: #173c30; color: white; border-radius: 6px; box-shadow: 0 4px 16px #0002; font-size: 14px; }
+.admin-workspace fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.admin-workspace button:disabled { cursor: wait; opacity: .6; }
+.admin-workspace button:has(.admin-spinner) { display: inline-flex; align-items: center; gap: 8px; }
+.admin-workspace fieldset:disabled { opacity: .8; }
+@media (prefers-reduced-motion: reduce) { .admin-spinner { animation: none; } }
+@media (max-width: 700px) { .admin-welcome { padding: 24px 20px; } .admin-welcome-content { margin-top: 64px; } .admin-welcome h1 { font-size: 28px; } .admin-operation-feedback { left: 16px; right: 16px; bottom: 16px; } }
 .admin-workspace { display: grid; grid-template-columns: 230px minmax(0, 1fr); min-height: 100vh; }
 .admin-sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 24px 16px; background: white; border-right: 1px solid #dfe5e8; }
 .admin-brand { display: block; padding: 14px; background: #151515; border-radius: 6px; margin-bottom: 36px; }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { adminAuth } from "../lib/adminAuth";
@@ -9,6 +9,9 @@ import SalesDashboard from "../components/SalesDashboard";
 import InventoryPanel from "../components/InventoryPanel";
 import { stockStatus, stockQuantity } from "../lib/inventory";
 import { formatPrice } from "../lib/shopPresentation";
+import { withMinimumDuration } from "../lib/adminOperations";
+import PendingLabel from "../components/PendingLabel";
+import { storeDate } from "../lib/storeTime";
 
 const emptyProduct = {
   id: null,
@@ -40,6 +43,11 @@ function defaultDashboardRange() {
 export default function Admin() {
   const navigate = useNavigate();
   const user = adminAuth.getUser();
+  const adminName = user?.full_name || "Admin";
+  const [welcomed, setWelcomed] = useState(false);
+  const operationLock = useRef(false);
+  const [operation, setOperation] = useState(null);
+  const busy = Boolean(operation);
 
   const [tab, setTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -51,8 +59,8 @@ export default function Admin() {
   const [error, setError] = useState("");
 
   const [form, setForm] = useState(emptyProduct);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const saving = operation?.key === "save";
+  const uploading = operation?.key === "upload";
   const [dashboard, setDashboard] = useState(null);
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardRange, setDashboardRange] = useState(defaultDashboardRange);
@@ -135,67 +143,43 @@ export default function Admin() {
     setForm(emptyProduct);
   }
 
-  async function handleSaveProduct(e) {
-    e.preventDefault();
-    setSaving(true);
+  async function runOperation(key, label, action, onSuccess, refresh = true) {
+    if (operationLock.current) return;
+    operationLock.current = true;
+    setOperation({ key, label });
     setError("");
     try {
-      if (form.id) {
-        await api.updateProduct(form);
-      } else {
-        await api.createProduct(form);
-      }
-      resetForm();
-      await loadAll();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
+      const result = await withMinimumDuration(action);
+      onSuccess?.(result);
+      if (refresh) await loadAll();
+    } catch (err) { setError(err.message); }
+    finally { operationLock.current = false; setOperation(null); }
+  }
+
+  async function handleSaveProduct(e) {
+    e.preventDefault();
+    await runOperation("save", form.id ? "Saving changes..." : "Adding product...", () => form.id ? api.updateProduct(form) : api.createProduct(form), resetForm);
   }
 
   async function handleDelete(id) {
+    if (operationLock.current) return;
     if (!confirm("Delete this product? This can't be undone, and its photo will be removed too.")) return;
-    try {
-      await api.deleteProduct(id);
-      await loadAll();
-    } catch (err) {
-      setError(err.message);
-    }
+    await runOperation(`delete-${id}`, "Deleting product...", () => api.deleteProduct(id), () => { if (form.id === id) resetForm(); });
   }
 
   async function toggleStock(product) {
-    try {
-      await api.updateProduct({ id: product.id, in_stock: Number(product.in_stock) ? 0 : 1 });
-      await loadAll();
-    } catch (err) {
-      setError(err.message);
-    }
+    await runOperation(`stock-${product.id}`, "Updating availability...", () => api.updateProduct({ id: product.id, in_stock: Number(product.in_stock) ? 0 : 1 }));
   }
 
   async function toggleVisible(product) {
-    try {
-      await api.updateProduct({ id: product.id, is_visible: Number(product.is_visible) ? 0 : 1 });
-      await loadAll();
-    } catch (err) {
-      setError(err.message);
-    }
+    await runOperation(`visible-${product.id}`, "Updating menu visibility...", () => api.updateProduct({ id: product.id, is_visible: Number(product.is_visible) ? 0 : 1 }));
   }
 
   async function handleImageChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploading(true);
-    setError("");
-    try {
-      const res = await api.uploadProductImage(file);
-      setForm((f) => ({ ...f, image_url: res.path }));
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setUploading(false);
-      e.target.value = ""; // allow re-selecting the same file later
-    }
+    await runOperation("upload", "Uploading photo...", () => api.uploadProductImage(file), (res) => setForm((f) => ({ ...f, image_url: res.path })), false);
+    e.target.value = "";
   }
 
   function removeImage() {
@@ -203,12 +187,7 @@ export default function Admin() {
   }
 
   async function handleStatusChange(order, status) {
-    try {
-      await api.updateOrderStatus({ id: order.id, status });
-      await loadAll();
-    } catch (err) {
-      setError(err.message);
-    }
+    await runOperation(`order-${order.id}`, "Updating order...", () => api.updateOrderStatus({ id: order.id, status }));
   }
 
   const previewUrl = productImageUrl(form.image_url);
@@ -223,23 +202,31 @@ export default function Admin() {
   }
   const navItems = [{ key: "dashboard", label: "Dashboard", icon: "bi-grid" }, { key: "orders", label: "Orders", icon: "bi-bag-check" }, { key: "products", label: "Products", icon: "bi-box-seam" }, { key: "inventory", label: "Inventory", icon: "bi-boxes" }];
 
+  if (!welcomed) return <section className="admin-welcome">
+    <img src="/logo.svg" alt="Everest Butchery" />
+    <div className="admin-welcome-content"><i className="bi bi-shield-check" aria-hidden="true" /><p>{storeDate(new Date())}</p><h1>Hiiii, {adminName}!</h1><p>How are you today?</p>
+      {error && <p className="error-box" role="alert">{error}</p>}
+      <button type="button" className="btn btn-primary" onClick={() => setWelcomed(true)}>Continue to Dashboard <i className="bi bi-arrow-right" aria-hidden="true" /></button>
+    </div>
+  </section>;
+
   return (
     <div className="admin-workspace admin-page">
       <aside className={`admin-sidebar${sidebarOpen ? " is-open" : ""}`}>
         <Link to="/" className="admin-brand"><img src="/logo.svg" alt="Everest Butchery" /></Link>
         <span className="admin-sidebar-label">STORE MANAGEMENT</span>
         <nav id="admin-navigation" aria-label="Admin">
-          {navItems.map((item) => <button key={item.key} aria-current={tab === item.key ? "page" : undefined} className={tab === item.key ? "active" : ""} onClick={() => { if (item.key === "inventory") openInventory(); else { setTab(item.key); setSidebarOpen(false); } }}><i className={`bi ${item.icon}`} aria-hidden="true" />{item.label}{item.key === "inventory" && criticalCount > 0 && <span className="admin-nav-count">{criticalCount}</span>}</button>)}
+          {navItems.map((item) => <button key={item.key} disabled={busy} aria-current={tab === item.key ? "page" : undefined} className={tab === item.key ? "active" : ""} onClick={() => { if (item.key === "inventory") openInventory(); else { setTab(item.key); setSidebarOpen(false); } }}><i className={`bi ${item.icon}`} aria-hidden="true" />{item.label}{item.key === "inventory" && criticalCount > 0 && <span className="admin-nav-count">{criticalCount}</span>}</button>)}
         </nav>
-        <div className="admin-sidebar-bottom"><Link to="/menu"><i className="bi bi-arrow-up-right" aria-hidden="true" /> View store</Link><button onClick={handleLogout}><i className="bi bi-box-arrow-right" aria-hidden="true" /> Log out</button></div>
+        <div className="admin-sidebar-bottom"><Link to="/menu"><i className="bi bi-arrow-up-right" aria-hidden="true" /> View store</Link><button disabled={busy} onClick={handleLogout}><i className="bi bi-box-arrow-right" aria-hidden="true" /> Log out</button></div>
       </aside>
       <div className="admin-main">
-        <header className="admin-topbar"><button className="admin-mobile-menu admin-icon-button" aria-label="Toggle admin menu" aria-expanded={sidebarOpen} aria-controls="admin-navigation" onClick={() => setSidebarOpen(!sidebarOpen)}><i className="bi bi-list" aria-hidden="true" /></button><div><h1>{navItems.find((item) => item.key === tab)?.label}</h1><p>Everest Butchery / Admin</p></div><div className="admin-topbar-actions"><button className="admin-icon-button" title="Refresh data" aria-label="Refresh data" disabled={loading} onClick={loadAll}><i className="bi bi-arrow-clockwise" aria-hidden="true" /></button><span className="admin-staff"><i className="bi bi-shield-check" aria-hidden="true" />{user?.full_name || "Admin"}</span></div></header>
+        <header className="admin-topbar"><button className="admin-mobile-menu admin-icon-button" aria-label="Toggle admin menu" aria-expanded={sidebarOpen} aria-controls="admin-navigation" onClick={() => setSidebarOpen(!sidebarOpen)}><i className="bi bi-list" aria-hidden="true" /></button><div><h1>{navItems.find((item) => item.key === tab)?.label}</h1><p>Everest Butchery / Admin</p></div><div className="admin-topbar-actions"><button className="admin-icon-button" title="Refresh data" aria-label="Refresh data" disabled={loading || busy} onClick={loadAll}><i className="bi bi-arrow-clockwise" aria-hidden="true" /></button><span className="admin-staff"><i className="bi bi-shield-check" aria-hidden="true" />{user?.full_name || "Admin"}</span></div></header>
         <div className="admin-content">
       {error && <div className="error-box" role="alert">{error}</div>}
 
       {loading ? (
-        <p>Loading…</p>
+        <p><PendingLabel>Loading...</PendingLabel></p>
       ) : tab === "dashboard" ? (
         <>
         <section className="dashboard-stock-alerts">
@@ -249,7 +236,6 @@ export default function Admin() {
             {[{ level: "critical", count: criticalCount, label: "Limited stock available", description: "Below 20% remaining or sold out" }, { level: "warning", count: warningCount, label: "Stock running low", description: "Below 50% remaining" }].filter((alert) => alert.count > 0).map((alert) => <button key={alert.level} className={`stock-alert-button stock-${alert.level}`} onClick={() => openInventory(alert.level)} aria-label={`View ${alert.count} ${alert.level === "critical" ? "limited-stock" : "low-stock"} products in inventory`}>
               <div className="stock-alert-title"><i className="bi bi-exclamation-triangle" aria-hidden="true" /><strong>{alert.label}</strong><span>{alert.count}</span><i className="bi bi-arrow-right" aria-hidden="true" /></div>
               <p>{alert.description}</p>
-              <small>{tracked.filter((product) => stockStatus(product).level === alert.level).slice(0, 3).map((product) => product.name_en).join(", ")}{alert.count > 3 ? ` and ${alert.count - 3} more` : ""}</small>
             </button>)}
           </div> : <div className="stock-health-message"><i className={`bi ${tracked.length ? "bi-check-circle" : "bi-info-circle"}`} aria-hidden="true" /><span>{tracked.length ? "Stock good. No low-stock warnings." : "Stock tracking has not been set up yet."}</span><button className="btn btn-outline" onClick={() => openInventory()}>{tracked.length ? "View inventory" : "Set up inventory"}</button></div>}
         </section>
@@ -263,11 +249,12 @@ export default function Admin() {
       ) : tab === "inventory" ? (
         <>
         <div className="inventory-metrics"><div><span>Stock in store</span><strong>{stockQuantity(totalWeight)} kg</strong><small>{tracked.length} tracked products</small></div><div><span>Stock good</span><strong>{tracked.filter((product) => stockStatus(product).level === "good").length}</strong><small>At least 50% remaining</small></div><div className="metric-warning"><span>Stock running low</span><strong>{warningCount}</strong><small>Below 50% remaining</small></div><div className="metric-critical"><span>Limited stock</span><strong>{criticalCount}</strong><small>Below 20% or sold out</small></div></div>
-        <InventoryPanel products={products} onSaved={loadAll} statusFilter={inventoryFilter} onStatusFilterChange={setInventoryFilter} />
+        <InventoryPanel products={products} onSaved={loadAll} statusFilter={inventoryFilter} onStatusFilterChange={setInventoryFilter} onBusyChange={(active) => { operationLock.current = active; setOperation(active ? { key: "inventory", label: "Saving stock..." } : null); }} />
         </>
       ) : tab === "products" ? (
         <div>
           <form className="form-card" onSubmit={handleSaveProduct} style={{ marginBottom: 30 }}>
+            <fieldset disabled={busy}>
             <h3 style={{ fontSize: 16, marginBottom: 16 }}>{form.id ? "Edit Product" : "Add Product"}</h3>
 
             <div className="image-uploader">
@@ -276,7 +263,7 @@ export default function Admin() {
               </div>
               <div className="image-uploader-actions">
                 <label className="file-input-label">
-                  <Icon name="check" size={14} />
+                  {uploading ? <span className="admin-spinner" aria-hidden="true" /> : <Icon name="check" size={14} />}
                   {uploading ? "Uploading…" : previewUrl ? "Replace photo" : "Upload photo"}
                   <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageChange} disabled={uploading} />
                 </label>
@@ -361,12 +348,13 @@ export default function Admin() {
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button className="btn btn-primary" disabled={saving || uploading}>
-                {saving ? "Saving…" : form.id ? "Update Product" : "Add Product"}
+                {saving ? <PendingLabel>Saving...</PendingLabel> : form.id ? "Update Product" : "Add Product"}
               </button>
               {form.id && (
                 <button type="button" className="btn btn-ghost" onClick={resetForm}>Cancel Edit</button>
               )}
             </div>
+            </fieldset>
           </form>
 
           <div className="admin-table-scroll"><table className="cart-table admin-data-table">
@@ -385,19 +373,19 @@ export default function Admin() {
                     <td>{p.category_name_en}</td>
                     <td>{formatPrice(p.price_per_unit)} / {p.unit}</td>
                     <td>
-                      <button className="pill" disabled={p.stock_quantity != null && Number(p.stock_quantity) === 0} onClick={() => toggleStock(p)}>
-                        {Number(p.in_stock) ? "In stock" : "Out of stock"}
+                      <button className="pill" disabled={busy || (p.stock_quantity != null && Number(p.stock_quantity) === 0)} onClick={() => toggleStock(p)}>
+                        {operation?.key === `stock-${p.id}` ? <PendingLabel>Updating...</PendingLabel> : Number(p.in_stock) ? "In stock" : "Out of stock"}
                       </button>
                       <small>{p.stock_quantity == null ? "Quantity not tracked" : `${stockQuantity(p.stock_quantity)} ${p.unit}`}</small>
                     </td>
                     <td>
-                      <button className="pill" onClick={() => toggleVisible(p)}>
-                        {Number(p.is_visible) ? "Visible" : "Hidden"}
+                      <button className="pill" disabled={busy} onClick={() => toggleVisible(p)}>
+                        {operation?.key === `visible-${p.id}` ? <PendingLabel>Updating...</PendingLabel> : Number(p.is_visible) ? "Visible" : "Hidden"}
                       </button>
                     </td>
                     <td style={{ display: "flex", gap: 8 }}>
-                      <button className="remove-btn" onClick={() => startEdit(p)}>Edit</button>
-                      <button className="remove-btn" onClick={() => handleDelete(p.id)}>Delete</button>
+                      <button className="remove-btn" disabled={busy} onClick={() => startEdit(p)}>Edit</button>
+                      <button className="remove-btn" disabled={busy} onClick={() => handleDelete(p.id)}>{operation?.key === `delete-${p.id}` ? <PendingLabel>Deleting...</PendingLabel> : "Delete"}</button>
                     </td>
                   </tr>
                 );
@@ -418,7 +406,8 @@ export default function Admin() {
                 <td>{formatPrice(o.total)}</td>
                 <td>{o.fulfillment}</td>
                 <td>
-                  <select aria-label={`Status for ${o.order_number}`} value={o.status} onChange={(e) => handleStatusChange(o, e.target.value)}>
+                  {operation?.key === `order-${o.id}` && <PendingLabel>Updating...</PendingLabel>}
+                  <select disabled={busy} aria-label={`Status for ${o.order_number}`} value={o.status} onChange={(e) => handleStatusChange(o, e.target.value)}>
                     {ORDER_STATUSES.map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
@@ -431,6 +420,7 @@ export default function Admin() {
       )}
         </div>
       </div>
+      {operation && <div className="admin-operation-feedback" role="status"><PendingLabel>{operation.label}</PendingLabel></div>}
     </div>
   );
 }
