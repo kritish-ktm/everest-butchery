@@ -4,9 +4,10 @@ import ProductCard from "../components/ProductCard";
 import WelcomeBanner from "../components/WelcomeBanner";
 import Reveal from "../components/Reveal";
 import Icon from "../components/Icon";
+import { categoryIcon } from "../lib/categoryIcon";
 
 export default function Home() {
-  const { products, loading } = useShopData();
+  const { products, categories, loading, usingSample } = useShopData();
   const featured = products.filter((p) => Number(p.is_featured) === 1);
 
   return (
@@ -14,6 +15,10 @@ export default function Home() {
 
       {/* EXISTING WELCOME BANNER */}
       <WelcomeBanner />
+      <section className="container home-category-section" aria-labelledby="home-categories-title">
+        <h2 id="home-categories-title">Shop by Category</h2>
+        <div className="home-category-links">{categories.map((category) => <Link key={category.id} to={`/menu?category=${category.id}`}><Icon name={categoryIcon(category.name_en)} size={24} /><span>{category.name_en}</span><i className="bi bi-arrow-right" aria-hidden="true" /></Link>)}</div>
+      </section>
 
       {/* MAIN HERO */}
       <section className="hero">
@@ -165,6 +170,7 @@ export default function Home() {
           </div>
 
         )}
+        {!loading && usingSample && <p className="catalog-notice">Live availability could not be loaded. Please contact the shop before ordering.</p>}
 
       </section>
 

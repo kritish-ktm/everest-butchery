@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import GoogleSignInButton from "../components/GoogleSignInButton";
 import { authRedirectOrigin, supabase } from "../lib/supabase";
+import { customerProfile } from "../lib/customerProfile";
 
 export default function Account() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(Boolean(supabase));
   const [mode, setMode] = useState("login");
@@ -14,8 +16,8 @@ export default function Account() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [arriving, setArriving] = useState(false);
-  const arrivalTimer = useRef(null);
+  const [profile, setProfile] = useState({ phone: "", address: "", postal_code: "", city: "" });
+  const [profileSaving, setProfileSaving] = useState(false);
 
   useEffect(() => {
     if (!supabase) return undefined;
@@ -28,13 +30,12 @@ export default function Account() {
     });
     return () => {
       subscription.unsubscribe();
-      window.clearTimeout(arrivalTimer.current);
     };
   }, []);
 
   function welcomeHome() {
-    setArriving(true);
-    arrivalTimer.current = window.setTimeout(() => navigate("/", { replace: true }), 950);
+    const target = params.get("returnTo") || "/";
+    navigate(/^\/(checkout|menu)(\?|$)/.test(target) ? target : "/", { replace: true });
   }
 
   async function handleSubmit(event) {
@@ -100,12 +101,14 @@ export default function Account() {
     event.preventDefault();
     setError("");
     setMessage("");
-    const { data, error: authError } = await supabase.auth.updateUser({ data: { full_name: name.trim() } });
-    if (authError) setError(authError.message);
-    else {
+    setProfileSaving(true);
+    try {
+      const { data, error: authError } = await supabase.auth.updateUser({ data: { ...profile, full_name: name.trim() } });
+      if (authError) throw authError;
       setUser(data.user);
       setMessage("Profile updated.");
-    }
+    } catch (err) { setError(err.message || "Profile could not be saved."); }
+    finally { setProfileSaving(false); }
   }
 
   async function signOut() {
@@ -119,7 +122,11 @@ export default function Account() {
   }
 
   useEffect(() => {
-    if (user) setName(user.user_metadata?.full_name || user.user_metadata?.name || "");
+    if (user) {
+      const saved = customerProfile(user);
+      setName(saved.full_name);
+      setProfile({ phone: saved.phone, address: saved.address, postal_code: saved.postal_code, city: saved.city });
+    }
   }, [user]);
 
   if (loading) return <div className="section container account-page"><p>Loading account…</p></div>;
@@ -152,7 +159,13 @@ export default function Account() {
                 <label htmlFor="account-email">Email</label>
                 <input id="account-email" type="email" value={user.email || ""} readOnly />
               </div>
-              <button className="btn btn-primary" type="submit">Save Profile</button>
+              {[
+                { key: "phone", label: "Phone (optional)", type: "tel", complete: "tel" },
+                { key: "address", label: "Delivery address (optional)", type: "text", complete: "street-address" },
+                { key: "postal_code", label: "Postal code (optional)", type: "text", complete: "postal-code" },
+                { key: "city", label: "City (optional)", type: "text", complete: "address-level2" },
+              ].map((field) => <div className="field" key={field.key}><label htmlFor={`account-${field.key}`}>{field.label}</label><input id={`account-${field.key}`} type={field.type} autoComplete={field.complete} value={profile[field.key]} onChange={(event) => setProfile({ ...profile, [field.key]: event.target.value })} /></div>)}
+              <button className="btn btn-primary" type="submit" disabled={profileSaving}>{profileSaving ? "Saving..." : "Save Profile"}</button>
               <button className="account-signout" type="button" onClick={signOut}>Sign Out</button>
             </form>
           </>
@@ -180,11 +193,11 @@ export default function Account() {
                   <input id="account-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === "signup" ? "new-password" : "current-password"} minLength={8} required />
                 </div>
               )}
-              <button className={`btn btn-primary account-submit${arriving ? " is-entering" : ""}`} type="submit" disabled={submitting || arriving}>
+              <button className={`btn btn-primary account-submit polished-login${submitting ? " is-loading" : ""}`} type="submit" disabled={submitting}>
                 <span>{submitting ? "Please wait…" : mode === "signup" ? "Create Account" : mode === "recover" ? "Send recovery link" : "Log In"}</span>
-                {mode !== "recover" && <span className="login-scene" aria-hidden="true">
-                  <span className="login-character"><i className="head" /><i className="body" /><i className="arm" /><i className="leg leg-one" /><i className="leg leg-two" /></span>
-                  <i className="bi bi-door-open login-door" />
+                {mode !== "recover" && <span className="polished-login-scene" aria-hidden="true">
+                  <i className={`bi ${submitting ? "bi-arrow-repeat login-loading" : "bi-person-walking login-walker"}`} />
+                  <i className="bi bi-door-open" />
                 </span>}
               </button>
             </form>
@@ -193,7 +206,8 @@ export default function Account() {
               <button className="account-reset-link" type="button" onClick={() => { setMode("recover"); setError(""); setMessage(""); }}>Forgot password?</button>
             ) : mode === "recover" ? (
               <button className="account-reset-link" type="button" onClick={() => { setMode("login"); setError(""); setMessage(""); }}>Back to log in</button>
-            ) : (
+            ) : null}
+            {mode !== "recover" && (
               <>
                 <div className="account-divider"><span>or</span></div>
                 <GoogleSignInButton onCredential={handleGoogleCredential} />

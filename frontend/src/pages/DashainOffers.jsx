@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../components/Icon";
+import ProductCard from "../components/ProductCard";
+import { useShopData } from "../lib/useShopData";
+import { useCart } from "../context/CartContext";
+import { supabase } from "../lib/supabase";
+import { customerProfile } from "../lib/customerProfile";
+import { formatPrice } from "../lib/shopPresentation";
 
 const GAME_API = "/api/langur-burja";
 
@@ -51,6 +57,10 @@ function symbolForRoll(value) {
 
 export default function DashainOffers() {
   const navigate = useNavigate();
+  const { products, categories, loading: loadingProducts, usingSample } = useShopData();
+  const { items, subtotal } = useCart();
+  const [menuCategory, setMenuCategory] = useState("all");
+  const [bookingError, setBookingError] = useState("");
 
   const [booking, setBooking] = useState({
     full_name: "",
@@ -60,6 +70,18 @@ export default function DashainOffers() {
     requested_time: "",
     notes: "",
   });
+  useEffect(() => {
+    if (!supabase) return undefined;
+    let active = true;
+    function fillFromUser(user) {
+      if (!active || !user) return;
+      const profile = customerProfile(user);
+      setBooking((current) => ({ ...current, ...Object.fromEntries(Object.entries(profile).map(([key, value]) => [key, current[key] || value])) }));
+    }
+    supabase.auth.getSession().then(({ data }) => fillFromUser(data.session?.user));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => fillFromUser(session?.user));
+    return () => { active = false; subscription.unsubscribe(); };
+  }, []);
 
   const [playerKey] = useState(() => getPlayerKey());
   const [player, setPlayer] = useState(() => getStoredPlayer());
@@ -122,12 +144,13 @@ export default function DashainOffers() {
 
   function startDashainBooking(event) {
     event.preventDefault();
+    if (!items.length) { setBookingError("Choose at least one product before continuing."); return; }
     sessionStorage.setItem(
       "everest-dashain-booking",
       JSON.stringify(booking)
     );
     sessionStorage.setItem("everest-order-campaign", "dashain");
-    navigate("/menu?campaign=dashain");
+    navigate("/checkout?campaign=dashain");
   }
 
   async function registerPlayer(event) {
@@ -706,63 +729,33 @@ export default function DashainOffers() {
             </div>
             <div>
               <a
-                href="#dashain-booking-form"
+                href="#dashain-products"
                 className="btn btn-primary"
               >
-                Book Your Order
+                Choose Your Menu
               </a>
             </div>
           </div>
 
-          <div className="product-grid">
-            <div className="card product-card">
-              <div className="product-media">
-                <Icon name="goat" size={54} />
-              </div>
-              <div className="product-body">
-                <div className="product-name">Whole Lamb / Goat</div>
-                <div className="product-desc">
-                  Traditional whole cuts for your family gathering.
-                </div>
-              </div>
-            </div>
-
-            <div className="card product-card">
-              <div className="product-media">
-                <Icon name="meat" size={54} />
-              </div>
-              <div className="product-body">
-                <div className="product-name">Mixed Meat Packs</div>
-                <div className="product-desc">
-                  Curated packs with goat, buffalo, and chicken.
-                </div>
-              </div>
-            </div>
-
-            <div className="card product-card">
-              <div className="product-media">
-                <Icon name="chicken" size={54} />
-              </div>
-              <div className="product-body">
-                <div className="product-name">Party Trays</div>
-                <div className="product-desc">
-                  Ready‑to‑cook trays for Dashain parties and events.
-                </div>
-              </div>
-            </div>
+          <div id="dashain-products" className="dashain-product-selection">
+            <div className="category-pills shop-categories" role="group" aria-label="Dashain product categories"><button className={`pill${menuCategory === "all" ? " active" : ""}`} aria-pressed={menuCategory === "all"} onClick={() => setMenuCategory("all")}>All products</button>{categories.map((category) => <button className={`pill${menuCategory === String(category.id) ? " active" : ""}`} aria-pressed={menuCategory === String(category.id)} key={category.id} onClick={() => setMenuCategory(String(category.id))}>{category.name_en}</button>)}</div>
+            {loadingProducts ? <p role="status">Loading menu...</p> : <div className="product-grid">{products.filter((product) => menuCategory === "all" || String(product.category_id) === menuCategory).map((product) => <ProductCard key={product.id} product={product} />)}</div>}
+            {!loadingProducts && !products.some((product) => menuCategory === "all" || String(product.category_id) === menuCategory) && <p className="empty-state">No products available in this category.</p>}
+            {!loadingProducts && usingSample && <p className="catalog-notice">Live availability could not be loaded. Please contact the shop before ordering.</p>}
           </div>
 
+          {items.length > 0 ? <>
+          <div className="dashain-basket-summary"><h3>Your Dashain Selection</h3>{items.map((item) => <div className="summary-row" key={item.product_id}><span>{item.name_en} - {item.quantity} {item.unit}</span><strong>{formatPrice(item.quantity * item.price_per_unit)}</strong></div>)}<div className="summary-row summary-total"><span>Subtotal</span><strong>{formatPrice(subtotal)}</strong></div></div>
           <form
             className="dashain-booking-form"
             id="dashain-booking-form"
             onSubmit={startDashainBooking}
           >
             <div>
-              <span className="hero-kicker">START YOUR BOOKING</span>
-              <h3>Reserve your Dashain order</h3>
+              <span className="hero-kicker">YOUR DETAILS</span>
+              <h3>Finish your Dashain booking</h3>
               <p>
-                Tell us who to prepare the order for, then choose your meat
-                from the normal menu.
+                Confirm your details for the selection above.
               </p>
             </div>
 
@@ -771,6 +764,7 @@ export default function DashainOffers() {
                 <label htmlFor="dashain-name">Full name</label>
                 <input
                   id="dashain-name"
+                  autoComplete="name"
                   value={booking.full_name}
                   onChange={(event) =>
                     updateBooking("full_name", event.target.value)
@@ -783,6 +777,8 @@ export default function DashainOffers() {
                 <label htmlFor="dashain-phone">Phone</label>
                 <input
                   id="dashain-phone"
+                  type="tel"
+                  autoComplete="tel"
                   value={booking.phone}
                   onChange={(event) =>
                     updateBooking("phone", event.target.value)
@@ -796,6 +792,7 @@ export default function DashainOffers() {
                 <input
                   id="dashain-email"
                   type="email"
+                  autoComplete="email"
                   value={booking.email}
                   onChange={(event) =>
                     updateBooking("email", event.target.value)
@@ -846,9 +843,11 @@ export default function DashainOffers() {
             </div>
 
             <button className="btn btn-primary" type="submit">
-              Continue to Dashain menu
+              Continue to Checkout
             </button>
           </form>
+          {bookingError && <p className="error-box" role="alert">{bookingError}</p>}
+          </> : <p className="dashain-selection-prompt">Choose your products above to begin your booking.</p>}
 
           <div
             style={{

@@ -32,6 +32,8 @@ CREATE TABLE products (
   image_url       VARCHAR(255) DEFAULT NULL,
   is_halal        TINYINT(1) NOT NULL DEFAULT 1,
   in_stock        TINYINT(1) NOT NULL DEFAULT 1,
+  stock_quantity  DECIMAL(10,3) NULL,
+  stock_reference DECIMAL(10,3) NULL,
   is_visible      TINYINT(1) NOT NULL DEFAULT 1,  -- hide from customer menu without deleting
   is_featured     TINYINT(1) NOT NULL DEFAULT 0,
   created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -87,6 +89,7 @@ CREATE TABLE order_items (
   unit            ENUM('kg','piece','pack') NOT NULL,
   unit_price      DECIMAL(10,2) NOT NULL,  -- snapshot at time of sale
   line_total      DECIMAL(10,2) NOT NULL,
+  stock_reserved  DECIMAL(10,3) NOT NULL DEFAULT 0,
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(id)
 );

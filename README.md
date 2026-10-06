@@ -25,7 +25,7 @@ If the API isn't reachable yet, the site still works using built-in sample data,
 
 The React storefront can run on Vercel. Its Supabase data adapter replaces the PHP API when both Supabase variables are configured; without them, local development continues to use the XAMPP PHP API.
 
-1. Create a Supabase project and run `supabase/schema.sql` in its SQL Editor. This creates the tables, sample menu, access policies, product image bucket, and secure order creation function.
+1. Create a Supabase project and run `supabase/schema.sql`, then `supabase/stock_tracking.sql` in its SQL Editor. This creates the tables, sample menu, access policies, product image bucket, secure order creation function, and inventory tracking.
 2. In Supabase Authentication, create an admin user, then set that user's **app metadata** to `{ "role": "admin" }`. Never set this in user-editable metadata. Enable Google as a provider only if checkout Google sign-in is needed.
 3. In Vercel, import this repository and set the Root Directory to `frontend`. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from Supabase project settings. These are public client values; do not add a service-role key.
 4. Add the production Vercel URL to Supabase Auth's allowed redirect URLs and to the Google OAuth authorized origins if using Google sign-in. Deploy.
@@ -45,3 +45,13 @@ The old PHP/MySQL backend remains for XAMPP. Vercel hosts the frontend; Supabase
 Customer accounts use Supabase Auth. Add both the local and production `/account` URLs to Supabase Authentication's allowed redirect URLs. To enable Google login, configure Google under Supabase Authentication providers, set `VITE_GOOGLE_CLIENT_ID` in local and Vercel environments, and register the local and deployed site origins in Google OAuth. The Google OAuth client secret belongs only in Supabase, never in Vite environment variables.
 
 Checkout requires a Supabase-authenticated customer. If the schema was already installed before this requirement was added, run `supabase/require_authenticated_checkout.sql` once in the Supabase SQL Editor. Existing signed-in customers continue directly to checkout; other customers sign in first.
+
+## Inventory Management
+
+Open `/admin` and choose Inventory to enter each product's available quantity and full-stock reference, using that product's unit (kg, pack, or piece). A 100 kg reference shows Stock good at 50 kg or more, Stock running low below 50 kg, and Limited stock available below 20 kg. Zero stock is sold out. Products without quantities remain untracked; existing stock is never guessed.
+
+Stock is reserved atomically when an order is placed. Cancellation returns reserved quantities once; reopening reserves them again and can fail if stock is insufficient. Updating a product's name or price never overwrites remaining stock. Inventory edits reject stale quantities, and the admin view refreshes inventory every 30 seconds while visible and when the window regains focus.
+
+The `product_stock_tracking` migration was applied to the connected Supabase project on 2026-10-06. For another existing Supabase project, apply `supabase/stock_tracking.sql` once. For an existing MySQL installation, import `backend/db/stock_tracking.sql` once before running the updated PHP API; fresh MySQL installations already include these columns in `backend/db/schema.sql`.
+
+Run `node --test tests/inventory.test.js` from `frontend` for threshold and profile tests. `supabase/tests/stock_tracking.sql` tests database reservations, cancellation, overselling, stale edits, and admin authorization inside a rolled-back transaction. The dev-only `/tests/admin-preview.html` uses mock data for responsive layout checks; it is not part of the production build.

@@ -1,5 +1,6 @@
 import shopFront from "../assets/shop front.jpg";
 import "/src/WelcomeBanner.css";
+import { Link } from "react-router-dom";
 
 export default function WelcomeBanner() {
   return (
@@ -23,7 +24,6 @@ export default function WelcomeBanner() {
         </span>
 
         <h1 className="welcome-title">
-          Welcome to
           <span className="welcome-shine">
             Everest Butchery
           </span>
@@ -34,6 +34,7 @@ export default function WelcomeBanner() {
         </p>
 
         <div className="welcome-line"></div>
+        <Link to="/menu" className="btn btn-primary welcome-shop-link">Shop the Menu <i className="bi bi-arrow-right" aria-hidden="true" /></Link>
 
       </div>
 

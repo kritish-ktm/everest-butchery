@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+const HAS_VALID_CLIENT_ID = /^\d+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(GOOGLE_CLIENT_ID);
 const GOOGLE_SCRIPT = "https://accounts.google.com/gsi/client";
 
 export default function GoogleSignInButton({ onCredential }) {
@@ -12,7 +13,7 @@ export default function GoogleSignInButton({ onCredential }) {
   callbackRef.current = onCredential;
 
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || ready) return undefined;
+    if (!HAS_VALID_CLIENT_ID || ready) return undefined;
 
     const existing = document.querySelector(`script[src="${GOOGLE_SCRIPT}"]`);
     const script = existing || document.createElement("script");
@@ -27,7 +28,7 @@ export default function GoogleSignInButton({ onCredential }) {
   }, [ready]);
 
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || !ready || !buttonRef.current || !window.google?.accounts?.id) return;
+    if (!HAS_VALID_CLIENT_ID || !ready || !buttonRef.current || !window.google?.accounts?.id) return;
 
     buttonRef.current.innerHTML = "";
     window.google.accounts.id.initialize({
@@ -44,16 +45,16 @@ export default function GoogleSignInButton({ onCredential }) {
     });
   }, [ready]);
 
-  if (!GOOGLE_CLIENT_ID) {
+  if (!HAS_VALID_CLIENT_ID) {
     return (
       <p className="google-signin-note">
-        Add <code>VITE_GOOGLE_CLIENT_ID</code> to the frontend environment to enable Google Sign-In.
+        Google sign-in is currently unavailable. Please use your email and password.
       </p>
     );
   }
 
   if (scriptError) {
-    return <p className="google-signin-note">Google Sign-In could not load. Guest checkout is still available.</p>;
+    return <p className="google-signin-note">Google Sign-In could not load. Please use your email and password.</p>;
   }
 
   return <div className="google-signin-button" ref={buttonRef} aria-label="Sign in with Google" />;

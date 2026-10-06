@@ -4,6 +4,8 @@ import { useCart } from "../context/CartContext";
 import { api } from "../lib/api";
 import GoogleSignInButton from "../components/GoogleSignInButton";
 import { supabase } from "../lib/supabase";
+import { formatPrice } from "../lib/shopPresentation";
+import { customerProfile } from "../lib/customerProfile";
 
 const DELIVERY_FEE = 39;
 
@@ -65,11 +67,10 @@ export default function Checkout() {
 
   useEffect(() => {
     if (!authUser) return;
-    setForm((current) => ({
-      ...current,
-      full_name: current.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || "",
-      email: current.email || authUser.email || "",
-    }));
+    setForm((current) => {
+      const profile = customerProfile(authUser);
+      return { ...current, ...Object.fromEntries(Object.entries(profile).map(([key, value]) => [key, current[key] || value])) };
+    });
   }, [authUser]);
 
   if (items.length === 0) {
@@ -154,10 +155,10 @@ export default function Checkout() {
   }
 
   return (
-    <div className="section container page-shell">
+    <div className="section container page-shell checkout-page">
       <div className="page-heading compact-heading">
         <span className="page-kicker">PICKUP OR DELIVERY</span>
-        <h2>Checkout</h2>
+        <h1>Checkout</h1>
         <p>{campaign === "dashain"
           ? "Your Dashain booking will receive a dedicated reference number for easy pickup."
           : "Sign in to confirm your details and complete your order."}</p>
@@ -189,7 +190,7 @@ export default function Checkout() {
               </form>
               <div className="account-divider"><span>or</span></div>
               <GoogleSignInButton onCredential={handleGoogleCredential} />
-              <p className="checkout-create-account">New here? <Link to="/account">Create an account</Link></p>
+              <p className="checkout-create-account">New here? <Link to={`/account?returnTo=${encodeURIComponent(`/checkout${campaign ? `?campaign=${campaign}` : ""}`)}`}>Create an account</Link></p>
             </>
           )}
         </section>
@@ -205,48 +206,48 @@ export default function Checkout() {
                 : `Signed in as ${authUser.email || "your account"}.`}</span>
             </div>
           </div>
-          {error && <div className="error-box">{error}</div>}
+          {error && <div className="error-box" role="alert">{error}</div>}
 
           <div className="toggle-row">
-            <button type="button" className={"toggle-btn" + (fulfillment === "pickup" ? " active" : "")} onClick={() => setFulfillment("pickup")}>Pickup</button>
-            <button type="button" className={"toggle-btn" + (fulfillment === "delivery" ? " active" : "")} onClick={() => setFulfillment("delivery")}>Delivery</button>
+            <button type="button" aria-pressed={fulfillment === "pickup"} className={"toggle-btn" + (fulfillment === "pickup" ? " active" : "")} onClick={() => setFulfillment("pickup")}>Pickup</button>
+            <button type="button" aria-pressed={fulfillment === "delivery"} className={"toggle-btn" + (fulfillment === "delivery" ? " active" : "")} onClick={() => setFulfillment("delivery")}>Delivery</button>
           </div>
 
           <div className="field">
-            <label>Full name</label>
-            <input value={form.full_name} onChange={(e) => update("full_name", e.target.value)} required />
+            <label htmlFor="order-name">Full name</label>
+            <input id="order-name" autoComplete="name" value={form.full_name} onChange={(e) => update("full_name", e.target.value)} required />
           </div>
           <div className="field">
-            <label>Phone</label>
-            <input value={form.phone} onChange={(e) => update("phone", e.target.value)} required />
+            <label htmlFor="order-phone">Phone</label>
+            <input id="order-phone" type="tel" autoComplete="tel" value={form.phone} onChange={(e) => update("phone", e.target.value)} required />
           </div>
           <div className="field">
-            <label>Email (optional)</label>
-            <input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} />
+            <label htmlFor="order-email">Email (optional)</label>
+            <input id="order-email" type="email" autoComplete="email" value={form.email} onChange={(e) => update("email", e.target.value)} />
           </div>
 
           {fulfillment === "delivery" && (
             <>
               <div className="field">
-                <label>Delivery address</label>
-                <input value={form.address} onChange={(e) => update("address", e.target.value)} required />
+                <label htmlFor="order-address">Delivery address</label>
+                <input id="order-address" autoComplete="street-address" value={form.address} onChange={(e) => update("address", e.target.value)} required />
               </div>
               <div style={{ display: "flex", gap: 12 }}>
                 <div className="field" style={{ flex: 1 }}>
-                  <label>Postal code</label>
-                  <input value={form.postal_code} onChange={(e) => update("postal_code", e.target.value)} />
+                  <label htmlFor="order-postcode">Postal code</label>
+                  <input id="order-postcode" autoComplete="postal-code" inputMode="numeric" pattern="[0-9]{4}" maxLength={4} value={form.postal_code} onChange={(e) => update("postal_code", e.target.value)} required />
                 </div>
                 <div className="field" style={{ flex: 2 }}>
-                  <label>City</label>
-                  <input value={form.city} onChange={(e) => update("city", e.target.value)} />
+                  <label htmlFor="order-city">City</label>
+                  <input id="order-city" autoComplete="address-level2" value={form.city} onChange={(e) => update("city", e.target.value)} required />
                 </div>
               </div>
             </>
           )}
 
           <div className="field">
-            <label>Payment method</label>
-            <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+            <label htmlFor="order-payment">Payment method</label>
+            <select id="order-payment" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
               <option value="cash">Cash on {fulfillment === "delivery" ? "delivery" : "pickup"}</option>
               <option value="card">Card on {fulfillment === "delivery" ? "delivery" : "pickup"}</option>
               <option value="mobilepay">MobilePay</option>
@@ -254,13 +255,13 @@ export default function Checkout() {
           </div>
 
           <div className="field">
-            <label>Preferred date and time (optional)</label>
-            <input type="datetime-local" value={form.requested_time} onChange={(e) => update("requested_time", e.target.value)} />
+            <label htmlFor="order-time">Preferred date and time (optional)</label>
+            <input id="order-time" type="datetime-local" value={form.requested_time} onChange={(e) => update("requested_time", e.target.value)} />
           </div>
 
           <div className="field">
-            <label>Notes (optional)</label>
-            <textarea rows={3} value={form.notes} onChange={(e) => update("notes", e.target.value)} placeholder="E.g. cut preference, preferred pickup time..." />
+            <label htmlFor="order-notes">Notes (optional)</label>
+            <textarea id="order-notes" rows={3} value={form.notes} onChange={(e) => update("notes", e.target.value)} placeholder="E.g. cut preference, preferred pickup time..." />
           </div>
 
           <div className="checkout-legal-consent">
@@ -272,21 +273,22 @@ export default function Checkout() {
           </div>
 
           <button className="btn btn-primary" style={{ width: "100%" }} disabled={submitting || !acceptedTerms}>
-            {submitting ? "Placing order…" : `Place Order - ${total.toFixed(0)} kr`}
+            {submitting ? "Placing order…" : `Place Order - ${formatPrice(total)}`}
           </button>
         </form>
 
         <div className="cart-summary">
           <h3 style={{ fontSize: 16, marginBottom: 14 }}>Order Summary</h3>
+          <Link className="continue-shopping" to="/cart">Edit cart</Link>
           {items.map((i) => (
             <div className="summary-row" key={i.product_id}>
               <span>{i.name_en} × {i.quantity}{i.unit}</span>
-              <span>{(i.quantity * i.price_per_unit).toFixed(0)} kr</span>
+              <span>{formatPrice(i.quantity * i.price_per_unit)}</span>
             </div>
           ))}
-          <div className="summary-row"><span>Subtotal</span><span>{subtotal.toFixed(0)} kr</span></div>
+          <div className="summary-row"><span>Subtotal</span><span>{formatPrice(subtotal)}</span></div>
           <div className="summary-row"><span>Delivery</span><span>{fulfillment === "delivery" ? `${DELIVERY_FEE} kr` : "-"}</span></div>
-          <div className="summary-row summary-total"><span>Total</span><span>{total.toFixed(0)} kr</span></div>
+          <div className="summary-row summary-total"><span>Total</span><span>{formatPrice(total)}</span></div>
         </div>
       </div>
       )}

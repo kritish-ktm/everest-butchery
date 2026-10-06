@@ -16,6 +16,7 @@ import Seo from "./components/Seo";
 import Account from "./pages/Account";
 import PasswordRecoveryGate from "./components/PasswordRecoveryGate";
 import LegalPage from "./pages/LegalPages";
+import { useEffect } from "react";
 
 // Not linked anywhere in the public nav - reachable only by typing the URL,
 // and the backend independently rejects any admin request without a valid
@@ -29,13 +30,15 @@ function RequireAdmin({ children }) {
 
 export default function App() {
   const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
 
   return (
     <>
       <Seo />
       <PasswordRecoveryGate />
-      <Header />
-      <main>
+      <a href="#main-content" className="skip-link">Skip to content</a>
+      {pathname !== "/admin" && <Header />}
+      <main id="main-content" className={pathname === "/admin" ? "admin-root" : ""} tabIndex={-1}>
         <div className="page-turn-scene">
           <div key={pathname} className="page-turn-page">
             <Routes>
@@ -64,7 +67,7 @@ export default function App() {
           </div>
         </div>
       </main>
-      <Footer />
+      {pathname !== "/admin" && <Footer />}
     </>
   );
 }

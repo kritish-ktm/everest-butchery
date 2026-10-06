@@ -119,7 +119,8 @@ if ($method === 'POST') {
         // Price the line items server-side from the current product prices (never trust client prices).
         $subtotal = 0;
         $lineItems = [];
-        $productStmt = $pdo->prepare('SELECT * FROM products WHERE id = ?');
+        $productStmt = $pdo->prepare('SELECT * FROM products WHERE id = ? FOR UPDATE');
+        $reserveStock = $pdo->prepare('UPDATE products SET stock_quantity = stock_quantity - ?, in_stock = (stock_quantity > 0) WHERE id = ?');
 
         foreach ($data['items'] as $item) {
             if (empty($item['product_id']) || empty($item['quantity'])) fail('Each item needs product_id and quantity');
@@ -129,6 +130,13 @@ if ($method === 'POST') {
             if (!$product['in_stock']) fail($product['name_en'] . ' is currently out of stock');
 
             $qty = (float)$item['quantity'];
+            $step = $product['unit'] === 'kg' ? 0.25 : 1;
+            if (!is_finite($qty) || $qty <= 0 || $qty > 1000 || abs($qty / $step - round($qty / $step)) > 0.000001) throw new RuntimeException('Invalid quantity for ' . $product['name_en']);
+            $tracked = $product['stock_quantity'] !== null;
+            if ($tracked) {
+                if ((float)$product['stock_quantity'] < $qty) throw new RuntimeException('Insufficient stock for ' . $product['name_en'] . '. Please update your cart.');
+                $reserveStock->execute([$qty, $product['id']]);
+            }
             $lineTotal = round($qty * (float)$product['price_per_unit'], 2);
             $subtotal += $lineTotal;
 
@@ -139,6 +147,7 @@ if ($method === 'POST') {
                 'unit' => $product['unit'],
                 'unit_price' => $product['price_per_unit'],
                 'line_total' => $lineTotal,
+                'stock_reserved' => $tracked ? $qty : 0,
             ];
         }
 
@@ -172,12 +181,12 @@ if ($method === 'POST') {
         $orderId = $pdo->lastInsertId();
 
         $insertItem = $pdo->prepare(
-            'INSERT INTO order_items (order_id, product_id, product_name, quantity, unit, unit_price, line_total)
-             VALUES (?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO order_items (order_id, product_id, product_name, quantity, unit, unit_price, line_total, stock_reserved)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
         foreach ($lineItems as $li) {
             $insertItem->execute([
-                $orderId, $li['product_id'], $li['product_name'], $li['quantity'], $li['unit'], $li['unit_price'], $li['line_total'],
+                $orderId, $li['product_id'], $li['product_name'], $li['quantity'], $li['unit'], $li['unit_price'], $li['line_total'], $li['stock_reserved'],
             ]);
         }
 
@@ -213,8 +222,38 @@ if ($method === 'PUT') {
     if (!$set) fail('No fields to update');
     $params[] = $data['id'];
 
-    $stmt = $pdo->prepare('UPDATE orders SET ' . implode(', ', $set) . ' WHERE id = ?');
-    $stmt->execute($params);
+    try {
+        $pdo->beginTransaction();
+        $orderStmt = $pdo->prepare('SELECT status FROM orders WHERE id = ? FOR UPDATE');
+        $orderStmt->execute([$data['id']]);
+        $order = $orderStmt->fetch();
+        if (!$order) throw new RuntimeException('Order not found');
+        $nextStatus = $data['status'] ?? $order['status'];
+        if (($order['status'] === 'cancelled') !== ($nextStatus === 'cancelled')) {
+            $itemsStmt = $pdo->prepare('SELECT product_id, SUM(stock_reserved) quantity FROM order_items WHERE order_id = ? AND stock_reserved > 0 GROUP BY product_id ORDER BY product_id');
+            $itemsStmt->execute([$data['id']]);
+            $stockStmt = $pdo->prepare('SELECT stock_quantity FROM products WHERE id = ? FOR UPDATE');
+            foreach ($itemsStmt->fetchAll() as $item) {
+                $stockStmt->execute([$item['product_id']]);
+                $product = $stockStmt->fetch();
+                if ($product['stock_quantity'] === null) continue;
+                if ($nextStatus === 'cancelled') {
+                    $adjust = $pdo->prepare('UPDATE products SET in_stock = (in_stock OR stock_quantity = 0), stock_quantity = stock_quantity + ? WHERE id = ?');
+                    $adjust->execute([$item['quantity'], $item['product_id']]);
+                } else {
+                    if ((float)$product['stock_quantity'] < (float)$item['quantity']) throw new RuntimeException('Insufficient stock to reopen this order');
+                    $adjust = $pdo->prepare('UPDATE products SET stock_quantity = stock_quantity - ?, in_stock = (in_stock AND stock_quantity > 0) WHERE id = ?');
+                    $adjust->execute([$item['quantity'], $item['product_id']]);
+                }
+            }
+        }
+        $stmt = $pdo->prepare('UPDATE orders SET ' . implode(', ', $set) . ' WHERE id = ?');
+        $stmt->execute($params);
+        $pdo->commit();
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        fail('Could not update order: ' . $e->getMessage(), 409);
+    }
     send(['updated' => true]);
 }
 

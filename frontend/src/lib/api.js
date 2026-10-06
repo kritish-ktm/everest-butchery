@@ -23,6 +23,11 @@ async function supabaseApi(path, options = {}) {
     return { categories: unwrap({ data, error }) };
   }
   if (endpoint === "products.php") {
+    if (method === "PUT" && body.action === "stock") {
+      const { product_id, quantity, reference, expected_quantity } = body;
+      unwrap(await supabase.rpc("set_product_stock", { product_id, quantity, reference, expected_quantity }));
+      return { updated: true };
+    }
     if (method === "GET") {
       let request = supabase.from("products").select("*, categories(name_en,name_np,sort_order)");
       if (!query.has("include_out_of_stock")) request = request.eq("in_stock", true).eq("is_visible", true);
@@ -226,6 +231,8 @@ export const api = {
     request("products.php", { method: "POST", body: JSON.stringify(payload) }, { auth: true }),
   updateProduct: (payload) =>
     request("products.php", { method: "PUT", body: JSON.stringify(payload) }, { auth: true }),
+  setProductStock: (payload) =>
+    request("products.php", { method: "PUT", body: JSON.stringify({ action: "stock", ...payload }) }, { auth: true }),
   deleteProduct: (id) =>
     request(`products.php?id=${id}`, { method: "DELETE" }, { auth: true }),
 

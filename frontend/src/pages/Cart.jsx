@@ -1,5 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import QuantityControl from "../components/QuantityControl";
+import { formatPrice } from "../lib/shopPresentation";
 
 export default function Cart() {
   const { items, updateQuantity, removeItem, subtotal } = useCart();
@@ -16,10 +18,11 @@ export default function Cart() {
   }
 
   return (
-    <div className="section container page-shell">
+    <div className="section container page-shell basket-page">
       <div className="page-heading compact-heading">
         <span className="page-kicker">READY WHEN YOU ARE</span>
-        <h2>Your Cart</h2>
+        <h1>Your Cart</h1>
+        <Link to="/menu" className="continue-shopping"><i className="bi bi-arrow-left" aria-hidden="true" /> Continue shopping</Link>
       </div>
       <div className="cart-layout">
         <table className="cart-table">
@@ -29,32 +32,26 @@ export default function Cart() {
           <tbody>
             {items.map((i) => (
               <tr key={i.product_id}>
-                <td>{i.name_en}{i.name_np && <span className="np" style={{ color: "#888" }}> · {i.name_np}</span>}</td>
+                <td className="basket-product"><strong>{i.name_en}</strong>{i.name_np && <span className="np">{i.name_np}</span>}<small>{formatPrice(i.price_per_unit)} / {i.unit}</small></td>
                 <td>
-                  <input
-                    className="qty-input"
-                    type="number"
-                    min={0}
-                    step={i.unit === "kg" ? 0.25 : 1}
-                    value={i.quantity}
-                    onChange={(e) => updateQuantity(i.product_id, parseFloat(e.target.value) || 0)}
-                  />
-                  <span style={{ fontSize: 12, color: "#888", marginLeft: 6 }}>{i.unit}</span>
+                  <QuantityControl value={i.quantity} unit={i.unit} name={i.name_en} onChange={(quantity) => updateQuantity(i.product_id, quantity)} />
                 </td>
-                <td>{(i.quantity * i.price_per_unit).toFixed(0)} kr</td>
-                <td><button className="remove-btn" onClick={() => removeItem(i.product_id)}>Remove</button></td>
+                <td className="basket-line-price">{formatPrice(i.quantity * i.price_per_unit)}</td>
+                <td><button className="basket-remove" title={`Remove ${i.name_en}`} aria-label={`Remove ${i.name_en}`} onClick={() => removeItem(i.product_id)}><i className="bi bi-trash3" aria-hidden="true" /></button></td>
               </tr>
             ))}
           </tbody>
         </table>
 
         <div className="cart-summary">
-          <div className="summary-row"><span>Subtotal</span><span>{subtotal.toFixed(0)} kr</span></div>
+          <h2 className="basket-summary-title">Order Summary</h2>
+          <div className="summary-row"><span>Subtotal</span><span>{formatPrice(subtotal)}</span></div>
           <div className="summary-row" style={{ color: "#888" }}><span>Delivery fee</span><span>Calculated at checkout</span></div>
-          <div className="summary-row summary-total"><span>Total (pickup)</span><span>{subtotal.toFixed(0)} kr</span></div>
+          <div className="summary-row summary-total"><span>Total (pickup)</span><span>{formatPrice(subtotal)}</span></div>
           <button className="btn btn-primary" style={{ width: "100%", marginTop: 14 }} onClick={() => navigate("/checkout")}>
             Proceed to Checkout
           </button>
+          <p className="basket-payment-note"><i className="bi bi-person-check" aria-hidden="true" /> Sign in at checkout. Pay on pickup or delivery.</p>
         </div>
       </div>
     </div>

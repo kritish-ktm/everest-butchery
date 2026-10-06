@@ -87,11 +87,32 @@ if ($method === 'PUT') {
     require_admin();
     // Update a product (admin use)
     $data = json_input();
+    if (($data['action'] ?? '') === 'stock') {
+        $quantity = $data['quantity'] ?? null;
+        $reference = $data['reference'] ?? null;
+        if (!is_numeric($quantity) || !is_finite((float)$quantity) || (float)$quantity < 0 || !is_numeric($reference) || !is_finite((float)$reference) || (float)$reference <= 0) fail('Enter a non-negative quantity and a positive stock reference');
+        if (empty($data['product_id']) || !array_key_exists('expected_quantity', $data)) fail('Missing product or expected stock quantity');
+        $stmt = db()->prepare('UPDATE products SET stock_quantity = ?, stock_reference = ?, in_stock = ? WHERE id = ? AND stock_quantity <=> ?');
+        $stmt->execute([$quantity, $reference, (float)$quantity > 0 ? 1 : 0, $data['product_id'], $data['expected_quantity']]);
+        if (!$stmt->rowCount()) {
+            $check = db()->prepare('SELECT stock_quantity, stock_reference FROM products WHERE id = ?');
+            $check->execute([$data['product_id']]);
+            $row = $check->fetch();
+            if (!$row || (float)$row['stock_quantity'] !== (float)$quantity || (float)$row['stock_reference'] !== (float)$reference) fail('Stock changed since you opened this form. Refresh and try again.', 409);
+        }
+        send(['updated' => true]);
+    }
     if (empty($data['id'])) fail('Missing field: id');
 
     $pdo = db();
 
     // If the image is being changed/cleared, clean up the old file afterward.
+    if (array_key_exists('unit', $data)) {
+        $existing = $pdo->prepare('SELECT unit, stock_quantity FROM products WHERE id = ?');
+        $existing->execute([$data['id']]);
+        $row = $existing->fetch();
+        if ($row && $row['stock_quantity'] !== null && $row['unit'] !== $data['unit']) fail('Cannot change the unit of a stock-tracked product', 409);
+    }
     $oldImage = null;
     if (array_key_exists('image_url', $data)) {
         $existing = $pdo->prepare('SELECT image_url FROM products WHERE id = ?');
