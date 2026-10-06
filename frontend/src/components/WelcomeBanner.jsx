@@ -33,7 +33,6 @@ export default function WelcomeBanner() {
         <Link to="/menu" className="btn btn-primary welcome-shop-link">Shop the Menu <i className="bi bi-arrow-right" aria-hidden="true" /></Link>
 
       </div>
-      <a className="storefront-expand" href={shopFront} target="_blank" rel="noopener noreferrer" aria-label="View the full storefront photo" title="View the full storefront photo"><i className="bi bi-arrows-fullscreen" aria-hidden="true" /></a>
       </div>
     </section>
   );
