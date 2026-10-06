@@ -7,6 +7,7 @@ import { useCart } from "../context/CartContext";
 import { supabase } from "../lib/supabase";
 import { customerProfile } from "../lib/customerProfile";
 import { formatPrice } from "../lib/shopPresentation";
+import dashainFestival from "../assets/dashain-festival.jpeg";
 
 const GAME_API = "/api/langur-burja";
 
@@ -704,6 +705,7 @@ export default function DashainOffers() {
 
       {/* HEADER */}
       <section className="dashain-header">
+        <img className="dashain-header-image" src={dashainFestival} alt="" width="739" height="415" fetchPriority="high" />
         <div className="container">
           <span className="dashain-kicker">
             <Icon name="sparkles" size={15} /> FESTIVE SEASON · EVEREST BUTCHERY

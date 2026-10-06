@@ -2,14 +2,14 @@ import { useState } from "react";
 import { api } from "../lib/api";
 import { stockQuantity, stockStatus } from "../lib/inventory";
 
-export default function InventoryPanel({ products, onSaved, compact = false }) {
+export default function InventoryPanel({ products, onSaved, statusFilter = "all", onStatusFilterChange }) {
   const [editing, setEditing] = useState(null);
   const [quantity, setQuantity] = useState("");
   const [reference, setReference] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const rows = products.filter((product) => product.name_en.toLowerCase().includes(search.toLowerCase())).sort((a, b) => {
+  const rows = products.filter((product) => product.name_en.toLowerCase().includes(search.toLowerCase()) && (statusFilter === "all" || stockStatus(product).level === statusFilter)).sort((a, b) => {
     const rank = { critical: 0, warning: 1, good: 2, untracked: 3 };
     return rank[stockStatus(a).level] - rank[stockStatus(b).level] || a.name_en.localeCompare(b.name_en);
   });
@@ -35,8 +35,8 @@ export default function InventoryPanel({ products, onSaved, compact = false }) {
 
   return (
     <section className="inventory-section">
-      <div className="admin-section-heading"><div><h2>{compact ? "Stock Overview" : "Store Inventory"}</h2><p>Remaining stock by product. Warnings compare against the full-stock reference.</p></div>
-        {!compact && <input type="search" aria-label="Search inventory" placeholder="Search inventory" value={search} onChange={(event) => setSearch(event.target.value)} />}
+      <div className="admin-section-heading"><div><h2>Store Inventory</h2><p>Remaining stock by product. Warnings compare against the full-stock reference.</p></div>
+        <div className="inventory-filters"><select aria-label="Filter inventory by stock status" value={statusFilter} onChange={(event) => onStatusFilterChange?.(event.target.value)}><option value="all">All stock levels</option><option value="critical">Limited stock / sold out</option><option value="warning">Stock running low</option><option value="good">Stock good</option><option value="untracked">Not tracked</option></select><input type="search" aria-label="Search inventory" placeholder="Search inventory" value={search} onChange={(event) => setSearch(event.target.value)} /></div>
       </div>
       {editing && <form className="inventory-editor" onSubmit={save}>
         <h3>Update {editing.name_en}</h3>

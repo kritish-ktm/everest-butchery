@@ -43,6 +43,7 @@ export default function Admin() {
 
   const [tab, setTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [inventoryFilter, setInventoryFilter] = useState("all");
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -215,6 +216,11 @@ export default function Admin() {
   const totalWeight = tracked.filter((product) => product.unit === "kg").reduce((total, product) => total + Number(product.stock_quantity), 0);
   const warningCount = tracked.filter((product) => stockStatus(product).level === "warning").length;
   const criticalCount = tracked.filter((product) => stockStatus(product).level === "critical").length;
+  function openInventory(filter = "all") {
+    setInventoryFilter(filter);
+    setTab("inventory");
+    setSidebarOpen(false);
+  }
   const navItems = [{ key: "dashboard", label: "Dashboard", icon: "bi-grid" }, { key: "orders", label: "Orders", icon: "bi-bag-check" }, { key: "products", label: "Products", icon: "bi-box-seam" }, { key: "inventory", label: "Inventory", icon: "bi-boxes" }];
 
   return (
@@ -223,7 +229,7 @@ export default function Admin() {
         <Link to="/" className="admin-brand"><img src="/logo.svg" alt="Everest Butchery" /></Link>
         <span className="admin-sidebar-label">STORE MANAGEMENT</span>
         <nav id="admin-navigation" aria-label="Admin">
-          {navItems.map((item) => <button key={item.key} aria-current={tab === item.key ? "page" : undefined} className={tab === item.key ? "active" : ""} onClick={() => { setTab(item.key); setSidebarOpen(false); }}><i className={`bi ${item.icon}`} aria-hidden="true" />{item.label}{item.key === "inventory" && criticalCount > 0 && <span className="admin-nav-count">{criticalCount}</span>}</button>)}
+          {navItems.map((item) => <button key={item.key} aria-current={tab === item.key ? "page" : undefined} className={tab === item.key ? "active" : ""} onClick={() => { if (item.key === "inventory") openInventory(); else { setTab(item.key); setSidebarOpen(false); } }}><i className={`bi ${item.icon}`} aria-hidden="true" />{item.label}{item.key === "inventory" && criticalCount > 0 && <span className="admin-nav-count">{criticalCount}</span>}</button>)}
         </nav>
         <div className="admin-sidebar-bottom"><Link to="/menu"><i className="bi bi-arrow-up-right" aria-hidden="true" /> View store</Link><button onClick={handleLogout}><i className="bi bi-box-arrow-right" aria-hidden="true" /> Log out</button></div>
       </aside>
@@ -236,8 +242,17 @@ export default function Admin() {
         <p>Loading…</p>
       ) : tab === "dashboard" ? (
         <>
-        <div className="inventory-metrics"><div><span>Stock in store</span><strong>{stockQuantity(totalWeight)} kg</strong><small>{tracked.length} tracked products</small></div><div><span>Stock good</span><strong>{tracked.filter((product) => stockStatus(product).level === "good").length}</strong><small>At least 50% remaining</small></div><div className="metric-warning"><span>Stock running low</span><strong>{warningCount}</strong><small>Below 50% remaining</small></div><div className="metric-critical"><span>Limited stock</span><strong>{criticalCount}</strong><small>Below 20% or sold out</small></div></div>
-        <InventoryPanel products={products} onSaved={loadAll} compact />
+        <section className="dashboard-stock-alerts">
+          <div className="admin-section-heading"><h2>Stock Alerts</h2><button className="admin-icon-button" title="Open inventory" aria-label="Open inventory" onClick={() => openInventory()}><i className="bi bi-arrow-up-right" aria-hidden="true" /></button></div>
+          <p className="sr-only" role="status">{warningCount} products running low. {criticalCount} products with limited stock or sold out.</p>
+          {warningCount + criticalCount > 0 ? <div className="stock-alert-grid">
+            {[{ level: "critical", count: criticalCount, label: "Limited stock available", description: "Below 20% remaining or sold out" }, { level: "warning", count: warningCount, label: "Stock running low", description: "Below 50% remaining" }].filter((alert) => alert.count > 0).map((alert) => <button key={alert.level} className={`stock-alert-button stock-${alert.level}`} onClick={() => openInventory(alert.level)} aria-label={`View ${alert.count} ${alert.level === "critical" ? "limited-stock" : "low-stock"} products in inventory`}>
+              <div className="stock-alert-title"><i className="bi bi-exclamation-triangle" aria-hidden="true" /><strong>{alert.label}</strong><span>{alert.count}</span><i className="bi bi-arrow-right" aria-hidden="true" /></div>
+              <p>{alert.description}</p>
+              <small>{tracked.filter((product) => stockStatus(product).level === alert.level).slice(0, 3).map((product) => product.name_en).join(", ")}{alert.count > 3 ? ` and ${alert.count - 3} more` : ""}</small>
+            </button>)}
+          </div> : <div className="stock-health-message"><i className={`bi ${tracked.length ? "bi-check-circle" : "bi-info-circle"}`} aria-hidden="true" /><span>{tracked.length ? "Stock good. No low-stock warnings." : "Stock tracking has not been set up yet."}</span><button className="btn btn-outline" onClick={() => openInventory()}>{tracked.length ? "View inventory" : "Set up inventory"}</button></div>}
+        </section>
         <SalesDashboard
           data={dashboard}
           loading={dashboardLoading}
@@ -246,7 +261,10 @@ export default function Admin() {
         />
         </>
       ) : tab === "inventory" ? (
-        <InventoryPanel products={products} onSaved={loadAll} />
+        <>
+        <div className="inventory-metrics"><div><span>Stock in store</span><strong>{stockQuantity(totalWeight)} kg</strong><small>{tracked.length} tracked products</small></div><div><span>Stock good</span><strong>{tracked.filter((product) => stockStatus(product).level === "good").length}</strong><small>At least 50% remaining</small></div><div className="metric-warning"><span>Stock running low</span><strong>{warningCount}</strong><small>Below 50% remaining</small></div><div className="metric-critical"><span>Limited stock</span><strong>{criticalCount}</strong><small>Below 20% or sold out</small></div></div>
+        <InventoryPanel products={products} onSaved={loadAll} statusFilter={inventoryFilter} onStatusFilterChange={setInventoryFilter} />
+        </>
       ) : tab === "products" ? (
         <div>
           <form className="form-card" onSubmit={handleSaveProduct} style={{ marginBottom: 30 }}>

@@ -46,6 +46,14 @@ Customer accounts use Supabase Auth. Add both the local and production `/account
 
 Checkout requires a Supabase-authenticated customer. If the schema was already installed before this requirement was added, run `supabase/require_authenticated_checkout.sql` once in the Supabase SQL Editor. Existing signed-in customers continue directly to checkout; other customers sign in first.
 
+## Customer Weather And Time
+
+Customer pages show the Copenhagen date and clock, plus store-area readings from OpenWeather. Admin weather uses the same endpoint. Readings are cached for 15 minutes and include their observation timestamp; they are regional weather data, not a sensor reading inside the store.
+
+Set `OPENWEATHER_API_KEY` as a server-only Secret in Vercel Project Settings > Environment Variables for Production (and Preview if needed), then redeploy. Do not use a `VITE_` prefix. For local development, put the key in the gitignored `frontend/.env.local`; the Vite server includes a local `/api/weather` handler. Missing or inactive keys display "Weather unavailable" rather than sample readings. Rotate any key shared in chat.
+
+Run weather/time regression tests with `node --test tests/weather.test.js` from `frontend`.
+
 ## Inventory Management
 
 Open `/admin` and choose Inventory to enter each product's available quantity and full-stock reference, using that product's unit (kg, pack, or piece). A 100 kg reference shows Stock good at 50 kg or more, Stock running low below 50 kg, and Limited stock available below 20 kg. Zero stock is sold out. Products without quantities remain untracked; existing stock is never guessed.

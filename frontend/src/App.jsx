@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Header from "./components/Header";
+import StoreConditions from "./components/StoreConditions";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Menu from "./pages/Menu";
@@ -39,6 +40,7 @@ export default function App() {
       <a href="#main-content" className="skip-link">Skip to content</a>
       {pathname !== "/admin" && <Header />}
       <main id="main-content" className={pathname === "/admin" ? "admin-root" : ""} tabIndex={-1}>
+        {pathname !== "/admin" && pathname !== "/admin-login" && <StoreConditions />}
         <div className="page-turn-scene">
           <div key={pathname} className="page-turn-page">
             <Routes>

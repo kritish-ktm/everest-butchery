@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { formatDisplayDate, formatNepaliDate, isoDate } from "../lib/dateUtils";
+import { useWeather } from "../lib/useWeather";
+import { storeDate, storeTime } from "../lib/storeTime";
 
 function formatMoney(value) {
   return `${Number(value || 0).toFixed(0)} kr`;
@@ -17,19 +19,6 @@ const PRESETS = [
   { key: "week", label: "This week", from: () => daysAgo(6) },
   { key: "month", label: "This month", from: () => daysAgo(29) },
 ];
-
-const WEATHER_URL = "https://api.open-meteo.com/v1/forecast?latitude=55.7059&longitude=12.5008&current=temperature_2m,apparent_temperature,precipitation,wind_speed_10m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Europe%2FCopenhagen&forecast_days=3";
-
-function weatherSummary(code) {
-  if ([0, 1].includes(code)) return "Clear";
-  if ([2, 3].includes(code)) return "Cloudy";
-  if ([45, 48].includes(code)) return "Fog";
-  if ([51, 53, 55, 56, 57].includes(code)) return "Drizzle";
-  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return "Rain";
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return "Snow";
-  if ([95, 96, 99].includes(code)) return "Thunder";
-  return "Weather";
-}
 
 function percent(value, total) {
   if (!total) return "0%";
@@ -59,28 +48,12 @@ function ReportList({ title, icon, items, renderItem, empty = "No report data ye
 export default function SalesDashboard({ data, loading, range, onRangeChange }) {
   const [customFrom, setCustomFrom] = useState(range.from);
   const [customTo, setCustomTo] = useState(range.to);
-  const [weather, setWeather] = useState({ loading: true, error: "", data: null });
+  const weather = useWeather();
   const series = data?.series || [];
   const summary = data?.summary || {};
   const reports = data?.reports || {};
   const maxSales = Math.max(...series.map((item) => Number(item.sales) || 0), 1);
   const totalOrders = Number(summary.orders || 0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    async function loadWeather() {
-      try {
-        const response = await fetch(WEATHER_URL, { signal: controller.signal });
-        if (!response.ok) throw new Error("Weather unavailable");
-        const result = await response.json();
-        setWeather({ loading: false, error: "", data: result });
-      } catch (error) {
-        if (error.name !== "AbortError") setWeather({ loading: false, error: "Weather unavailable", data: null });
-      }
-    }
-    loadWeather();
-    return () => controller.abort();
-  }, []);
 
   function choosePreset(preset) {
     const to = isoDate(new Date());
@@ -181,15 +154,16 @@ export default function SalesDashboard({ data, loading, range, onRangeChange }) 
                     ? "Loading..."
                     : weather.error
                       ? weather.error
-                      : `${Math.round(weather.data.current.temperature_2m)}°C · ${weatherSummary(weather.data.current.weather_code)}`}
+                      : `${Math.round(weather.data.temperature)}°C · ${weather.data.description}`}
                 </strong>
                 <small>Islevhusvej 9, København</small>
               </div>
               {!weather.loading && !weather.error && (
                 <div className="weather-details">
-                  <span><i className="bi bi-thermometer-half" aria-hidden="true" /> Feels {Math.round(weather.data.current.apparent_temperature)}°C</span>
-                  <span><i className="bi bi-cloud-rain" aria-hidden="true" /> Rain {weather.data.current.precipitation} mm</span>
-                  <span><i className="bi bi-wind" aria-hidden="true" /> Wind {Math.round(weather.data.current.wind_speed_10m)} km/h</span>
+                  {weather.data.feelsLike != null && <span><i className="bi bi-thermometer-half" aria-hidden="true" /> Feels {Math.round(weather.data.feelsLike)}°C</span>}
+                  <span><i className="bi bi-cloud-rain" aria-hidden="true" /> Rain {weather.data.rain} mm/h</span>
+                  {weather.data.windKmh != null && <span><i className="bi bi-wind" aria-hidden="true" /> Wind {Math.round(weather.data.windKmh)} km/h</span>}
+                  <small>Observed {storeDate(new Date(weather.data.observedAt))} {storeTime(new Date(weather.data.observedAt))} · <a href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeather</a></small>
                 </div>
               )}
             </div>
