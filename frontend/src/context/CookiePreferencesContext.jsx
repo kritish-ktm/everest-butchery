@@ -4,7 +4,7 @@ import { CookiePreferencesContext } from "./useCookiePreferences";
 
 export function CookiePreferencesProvider({ children }) {
   const [choice, setChoice] = useState(readConsent);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(true);
   useEffect(() => {
     function sync(event) {
       if (event.key === CONSENT_KEY || event.key === null) setChoice(readConsent());
