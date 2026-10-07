@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { useCookiePreferences } from "../context/useCookiePreferences";
 import "../cookiePreferences.css";
@@ -12,6 +13,7 @@ export default function CookiePreferences() {
     const element = dialog.current;
     const previousOverflow = document.body.style.overflow;
     element.showModal();
+    element.scrollTop = 0;
     document.body.style.overflow = "hidden";
     return () => {
       element.close();
@@ -23,8 +25,8 @@ export default function CookiePreferences() {
     else choose(false);
   }
   if (!visible) return null;
-  return <dialog ref={dialog} className="cookie-preferences" aria-labelledby="cookie-heading" onCancel={event => { event.preventDefault(); dismiss(); }}>
-    <div className="container cookie-preferences-inner">
+  return createPortal(<dialog ref={dialog} className="cookie-preferences" aria-labelledby="cookie-heading" onCancel={event => { event.preventDefault(); dismiss(); }}>
+    <div className="cookie-preferences-inner">
       <div className="cookie-copy">
         <p className="cookie-brand">EVEREST BUTCHERY</p>
         <h2 id="cookie-heading" tabIndex={-1} autoFocus>Your privacy choices</h2>
@@ -38,5 +40,5 @@ export default function CookiePreferences() {
         {choice && <button type="button" className="cookie-close" onClick={closeSettings} aria-label="Close cookie settings" title="Close cookie settings"><i className="bi bi-x-lg" aria-hidden="true" /></button>}
       </div>
     </div>
-  </dialog>;
+  </dialog>, document.body);
 }
