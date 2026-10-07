@@ -87,6 +87,14 @@
   animation: fadeDown 1s ease forwards;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .shop-window-text .welcome-eyebrow,
+  .shop-window-text .welcome-title,
+  .shop-window-text .welcome-sub,
+  .shop-window-text .welcome-shine,
+  .shop-window-text .welcome-line { animation: none; opacity: 1; transform: none; filter: none; }
+}
+
 /* Main title */
 .welcome-title {
   margin: 10px 0;

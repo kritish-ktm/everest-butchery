@@ -28,7 +28,7 @@ export default function CookiePreferences() {
   return createPortal(<dialog ref={dialog} className="cookie-preferences" aria-labelledby="cookie-heading" onCancel={event => { event.preventDefault(); dismiss(); }}>
     <div className="cookie-preferences-inner">
       <div className="cookie-copy">
-        <p className="cookie-brand">EVEREST BUTCHERY</p>
+        <img className="cookie-brand-logo" src="/logo.svg" alt="Everest Butchery" width="280" height="84" />
         <h2 id="cookie-heading" tabIndex={-1} autoFocus>Your privacy choices</h2>
         <p>Necessary storage keeps sign-in, your basket, and checkout working. Optional preference storage remembers your menu sort order on this device for up to 180 days. It stays off unless you accept.</p>
         <p>No advertising or analytics trackers are added by this choice. <Link to="/privacy" onClick={dismiss}>Privacy notice</Link></p>

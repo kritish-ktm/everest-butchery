@@ -12,6 +12,8 @@ import { formatPrice } from "../lib/shopPresentation";
 import { withMinimumDuration } from "../lib/adminOperations";
 import PendingLabel from "../components/PendingLabel";
 import { storeDate } from "../lib/storeTime";
+import { useWeather } from "../lib/useWeather";
+import { timeGreeting, weatherGreeting } from "../lib/adminGreeting";
 import "../admin.css";
 
 const emptyProduct = {
@@ -46,6 +48,13 @@ export default function Admin() {
   const user = adminAuth.getUser();
   const adminName = user?.full_name || "Admin";
   const [welcomed, setWelcomed] = useState(false);
+  const weather = useWeather();
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    if (welcomed) return;
+    const timer = window.setInterval(() => setNow(new Date()), 60000);
+    return () => window.clearInterval(timer);
+  }, [welcomed]);
   const operationLock = useRef(false);
   const [operation, setOperation] = useState(null);
   const busy = Boolean(operation);
@@ -204,8 +213,12 @@ export default function Admin() {
   const navItems = [{ key: "dashboard", label: "Dashboard", icon: "bi-grid" }, { key: "orders", label: "Orders", icon: "bi-bag-check" }, { key: "products", label: "Products", icon: "bi-box-seam" }, { key: "inventory", label: "Inventory", icon: "bi-boxes" }];
 
   if (!welcomed) return <section className="admin-welcome">
-    <img src="/logo.svg" alt="Everest Butchery" />
-    <div className="admin-welcome-content"><i className="bi bi-shield-check" aria-hidden="true" /><p>{storeDate(new Date())}</p><h1>Hiiii, {adminName}!</h1><p>How are you today?</p>
+    <div className="admin-welcome-content">
+      <img className="admin-welcome-logo" src="/logo.svg" alt="Everest Butchery" width="320" height="96" />
+      <p className="admin-welcome-date">{storeDate(now)} · Copenhagen</p>
+      <p className="admin-time-greeting">{timeGreeting(now)}!</p>
+      <h1>Hiiii, {adminName}!</h1><p className="admin-welcome-question">How are you today?</p>
+      <p className="admin-weather-greeting" role="status">{weather.loading ? "Checking today's weather..." : weather.error ? "Today's weather is unavailable. Wishing you a good day at the store!" : weatherGreeting(weather.data)}</p>
       {error && <p className="error-box" role="alert">{error}</p>}
       <button type="button" className="btn btn-primary" onClick={() => setWelcomed(true)}>Continue to Dashboard <i className="bi bi-arrow-right" aria-hidden="true" /></button>
     </div>
@@ -223,7 +236,7 @@ export default function Admin() {
       </aside>
       <div className="admin-main">
         <header className="admin-topbar"><button className="admin-mobile-menu admin-icon-button" aria-label="Toggle admin menu" aria-expanded={sidebarOpen} aria-controls="admin-navigation" onClick={() => setSidebarOpen(!sidebarOpen)}><i className="bi bi-list" aria-hidden="true" /></button><div><h1>{navItems.find((item) => item.key === tab)?.label}</h1><p>Everest Butchery / Admin</p></div><div className="admin-topbar-actions"><button className="admin-icon-button" title="Refresh data" aria-label="Refresh data" disabled={loading || busy} onClick={loadAll}><i className="bi bi-arrow-clockwise" aria-hidden="true" /></button><span className="admin-staff"><i className="bi bi-shield-check" aria-hidden="true" />{user?.full_name || "Admin"}</span></div></header>
-        <div className="admin-content">
+        <div className="admin-content" key={tab}>
       {error && <div className="error-box" role="alert">{error}</div>}
 
       {loading ? (
