@@ -4,14 +4,14 @@ import Icon from "./Icon";
 import { categoryIcon } from "../lib/categoryIcon";
 import { productImageUrl } from "../lib/imageUrl";
 import QuantityControl from "./QuantityControl";
-import { formatPrice, quantityStep } from "../lib/shopPresentation";
+import { formatPrice, quantityStep, productAvailable } from "../lib/shopPresentation";
 
 export default function ProductCard({ product }) {
   const { addItem, items } = useCart();
   const [qty, setQty] = useState(() => product.stock_quantity == null ? (product.unit === "kg" ? 0.5 : 1) : Math.max(quantityStep(product.unit), Math.min(product.unit === "kg" ? 0.5 : 1, Math.floor(Number(product.stock_quantity) / quantityStep(product.unit)) * quantityStep(product.unit))));
   const [added, setAdded] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
-  const inStock = product.in_stock == null || Number(product.in_stock) === 1;
+  const inStock = productAvailable(product);
   const remaining = product.stock_quantity == null ? Infinity : Math.max(0, Number(product.stock_quantity) - (items.find((item) => item.product_id === product.id)?.quantity || 0));
   const canAdd = inStock && qty <= remaining;
   useEffect(() => {

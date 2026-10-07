@@ -8,6 +8,11 @@ export function quantityStep(unit) {
   return unit === "kg" ? 0.25 : 1;
 }
 
+export function productAvailable(product) {
+  const enabled = product.in_stock == null || Number(product.in_stock) === 1;
+  return enabled && (product.stock_quantity == null || Number(product.stock_quantity) > 0);
+}
+
 export function validQuantity(value, unit) {
   const step = quantityStep(unit);
   return Number.isFinite(value) && value >= step && Math.abs(value / step - Math.round(value / step)) < 0.000001;

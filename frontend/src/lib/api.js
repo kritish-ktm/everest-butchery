@@ -30,7 +30,7 @@ async function supabaseApi(path, options = {}) {
     }
     if (method === "GET") {
       let request = supabase.from("products").select("*, categories(name_en,name_np,sort_order)");
-      if (!query.has("include_out_of_stock")) request = request.eq("in_stock", true).eq("is_visible", true);
+      if (!query.has("include_out_of_stock")) request = request.eq("is_visible", true);
       if (query.has("category")) request = request.eq("category_id", Number(query.get("category")));
       request = request.order("is_featured", { ascending: false }).order("name_en");
       if (query.has("id")) {
