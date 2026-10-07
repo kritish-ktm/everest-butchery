@@ -26,7 +26,12 @@ export function Fixture() {
     setCount(requests);
     await new Promise((resolve) => setTimeout(resolve, 600));
     if (fail) throw new Error("Demo stock unavailable. Please update your cart.");
-    return { order_number: "DEMO-1001", total: 74.5 + (payload.fulfillment === "delivery" ? 39 : 0) };
+    return { order_number: "DEMO-1001", total: 74.5 + (payload.fulfillment === "delivery" ? 39 : 0), email_status: 'not_sent', receipt: {
+      order_number: 'DEMO-1001', created_at: '2026-10-07T12:00:00Z', status: 'pending', payment_status: 'unpaid', payment_method: payload.payment_method,
+      fulfillment: payload.fulfillment, customer: { full_name: 'Demo Customer' }, subtotal: 74.5,
+      delivery_fee: payload.fulfillment === 'delivery' ? 39 : 0, total: 74.5 + (payload.fulfillment === 'delivery' ? 39 : 0),
+      items: [{ product_name: 'Demo Goat', quantity: 0.5, unit: 'kg', unit_price: 149, line_total: 74.5 }],
+    } };
   };
   }, [fail]);
   return <><header className="container"><p>Mock checkout: no real orders, payment, or stock changes.</p><button disabled={items.length > 0} onClick={() => addItem({ id: 1, name_en: "Demo Goat", unit: "kg", price_per_unit: 149 }, 0.5)}>Add demo item</button><label><input type="checkbox" checked={fail} onChange={(event) => setFail(event.target.checked)} /> Simulate stock error</label><p>Order requests: {count}</p><Link to="/checkout">Open mock checkout</Link></header><Routes><Route path="/checkout" element={<Checkout />} /><Route path="/order-confirmation" element={<OrderConfirmation />} /><Route path="*" element={<p className="container">Choose Open mock checkout.</p>} /></Routes></>;

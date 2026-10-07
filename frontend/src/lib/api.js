@@ -208,6 +208,15 @@ async function request(path, options = {}, { auth = false } = {}) {
   return data;
 }
 
+async function customerOrderRequest(url, options = {}) {
+  const { data, error } = await supabase.auth.getSession();
+  if (error || !data.session?.access_token) throw new Error('Please sign in to access your order.');
+  const response = await fetch(url, { ...options, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session.access_token}` } });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || 'Order service unavailable.');
+  return result;
+}
+
 export const api = {
   getCategories: () => request("categories.php"),
   getProducts: (params = {}) => {
@@ -215,8 +224,10 @@ export const api = {
     return request(`products.php${qs ? `?${qs}` : ""}`);
   },
   getProduct: (id) => request(`products.php?id=${id}`),
-  createOrder: (payload) =>
-    request("orders.php", { method: "POST", body: JSON.stringify(payload) }),
+  createOrder: (payload) => usesSupabase
+    ? customerOrderRequest('/api/orders', { method: 'POST', body: JSON.stringify(payload) })
+    : request("orders.php", { method: "POST", body: JSON.stringify(payload) }),
+  getReceipt: (reference) => customerOrderRequest(`/api/orders?reference=${encodeURIComponent(reference)}`),
   googleLogin: (credential) =>
     request("google_login.php", { method: "POST", body: JSON.stringify({ credential }) }),
 

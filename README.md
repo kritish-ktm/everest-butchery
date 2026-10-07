@@ -77,3 +77,36 @@ Stock is reserved atomically when an order is placed. Cancellation returns reser
 The `product_stock_tracking` migration was applied to the connected Supabase project on 2026-10-06. For another existing Supabase project, apply `supabase/stock_tracking.sql` once. For an existing MySQL installation, import `backend/db/stock_tracking.sql` once before running the updated PHP API; fresh MySQL installations already include these columns in `backend/db/schema.sql`.
 
 Run `node --test tests/inventory.test.js` from `frontend` for threshold and profile tests. `supabase/tests/stock_tracking.sql` tests database reservations, cancellation, overselling, stale edits, and admin authorization inside a rolled-back transaction. The dev-only `/tests/admin-preview.html` uses mock data for responsive layout checks; it is not part of the production build.
+
+## Customer Receipts And Brevo Email
+
+New Supabase orders use the server `/api/orders` endpoint. The database assigns
+ownership from the authenticated account and captures a customer snapshot;
+`get_order_receipt` returns only that customer's order, including saved prices
+and quantities. Apply `supabase/order_receipts.sql` to other installations.
+Old orders are not automatically assigned to accounts using a phone number.
+
+The confirmation page provides a downloadable, self-contained HTML receipt
+that opens in a browser and can be printed or saved as PDF. Brevo emails contain
+the same itemised receipt and attach the HTML copy. An order-received email does
+not assert shop approval or payment. Email is sent to the verified signed-in
+account's email address, not an arbitrary checkout email field.
+
+Configure these server-only variables in Vercel (frontend project root) and in
+`frontend/.env.local` for local testing, then redeploy/restart:
+
+- `BREVO_SMTP_LOGIN`: your Brevo SMTP login.
+- `BREVO_SMTP_PASSWORD`: your Brevo SMTP key, not the REST API key.
+- `ORDER_EMAIL_FROM`: `Everest Butchery <iminati921@gmail.com>` for now, after
+  verifying this sender in Brevo. Replace with a verified business email later.
+- The existing `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` must also be
+  available to server Functions, or supply `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
+
+Never give SMTP credentials a `VITE_` prefix or commit them. Port 587 requires
+STARTTLS with certificate verification. SMTP acceptance is not proof of inbox
+delivery; monitor Brevo delivery/bounce logs. Missing settings or SMTP failure
+preserve the saved order and download option, with an honest email status.
+This version makes one sending attempt per server-created order. It does not
+have a background outbox/retry queue or resend endpoint, and existing checkout
+retries after a lost network response are not yet server-idempotent.
+PHP/MySQL fallback orders do not yet support this receipt/email integration.

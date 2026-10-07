@@ -157,3 +157,8 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid var(--red); ou
 .dashain-header p { opacity: 1; }
 @media (max-width: 650px) { .dashain-header { min-height: 300px; padding: 44px 0; } .dashain-header h1 { font-size: 40px; } .dashain-header p { font-size: 16px; } }
 @media (prefers-reduced-motion: reduce) { .login-walker { transition: none; transform: none !important; } .login-loading { animation: none; } }
+.confirmation-receipt { max-width: 600px; margin: 24px auto; text-align: left; }
+.confirmation-receipt .summary-row { gap: 16px; }
+.confirmation-receipt .summary-row > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.confirmation-receipt .summary-row > span:last-child { flex-shrink: 0; }
+.confirmation-receipt .btn { display: inline-flex; align-items: center; gap: 8px; }

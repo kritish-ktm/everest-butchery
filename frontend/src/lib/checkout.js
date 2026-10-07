@@ -24,7 +24,7 @@ export function cartSubtotal(items) {
 
 export function saveOrderReceipt(order, storage, now = Date.now()) {
   try {
-    (storage || sessionStorage).setItem(RECEIPT_KEY, JSON.stringify({ order_number: order.order_number, total: Number(order.total), savedAt: now }));
+    (storage || sessionStorage).setItem(RECEIPT_KEY, JSON.stringify({ order_number: order.order_number, total: Number(order.total), email_status: order.email_status === 'submitted' ? 'submitted' : 'not_sent', savedAt: now }));
   } catch { /* The router still carries the receipt when storage is unavailable. */ }
 }
 
